@@ -203,7 +203,10 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, unsig
 
     // Debug readout: song time in seconds, so a frozen clock is immediately visible.
     std::snprintf(text, sizeof(text), "%d", static_cast<int>(now / 1000.0));
-    r.draw_text_right(kScreenWidth - 6.0f, kScreenHeight - 30.0f, 0.8f, text, abgr(130, 140, 160));`r`n`r`n    std::snprintf(text, sizeof(text), "%u", frames);`r`n    r.draw_text_right(kScreenWidth - 6.0f, kScreenHeight - 14.0f, 0.8f, text, abgr(110, 120, 140));
+    r.draw_text_right(kScreenWidth - 6.0f, kScreenHeight - 30.0f, 0.8f, text, abgr(130, 140, 160));
+
+    std::snprintf(text, sizeof(text), "%u", frames);
+    r.draw_text_right(kScreenWidth - 6.0f, kScreenHeight - 14.0f, 0.8f, text, abgr(110, 120, 140));
 
     const float bar_x = kScreenWidth - 24.0f;
     const float bar_h = 180.0f;
@@ -302,7 +305,9 @@ int main() {
         sceCtrlReadBufferPositive(&pad, 1);
         if (pad.Buttons & PSP_CTRL_HOME) break;
 
-        static unsigned frames = 0;`r`n        ++frames;`r`n        const InputState input = read_input(pad);
+        static unsigned frames = 0;
+        ++frames;
+        const InputState input = read_input(pad);
         const double song_time = now_ms() - start_time;
 
         if (game) {
