@@ -255,11 +255,17 @@ bool load_beatmap(const std::string& path, PlayableBeatmap& out, std::string& er
     Beatmap map;
     if (!parse_osu(text, map, &error)) return false;
 
-    char line[200];
-    std::snprintf(line, sizeof(line), "load size=%d v=%d objs=%d tp=%d\n",
-                  static_cast<int>(text.size()), map.format_version,
+    char line[320];
+    char head[49];
+    for (size_t i = 0; i < 48 && i < text.size(); ++i) {
+        const unsigned char c = static_cast<unsigned char>(text[i]);
+        head[i] = (c >= 32 && c < 127) ? static_cast<char>(c) : '.';
+    }
+    head[std::min<size_t>(48, text.size())] = 0;
+    std::snprintf(line, sizeof(line), "load path=%s size=%d v=%d objs=%d tp=%d head=%s\n",
+                  path.c_str(), static_cast<int>(text.size()), map.format_version,
                   static_cast<int>(map.objects.size()),
-                  static_cast<int>(map.timing_points.size()));
+                  static_cast<int>(map.timing_points.size()), head);
     debug_log(line);
 
     out = compile_beatmap(std::move(map));
