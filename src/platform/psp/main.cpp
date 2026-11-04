@@ -1,9 +1,9 @@
 // PSP entry point: loads a beatmap from the Memory Stick, runs the gameplay
 // simulation with the analog stick and renders it with the GU renderer.
 //
-// Target hardware: PSP-1000 (32 MiB RAM, 2 MiB VRAM). Framebuffers take 1.1 MiB
-// of VRAM, so textures live in main RAM; the skin is procedural (see skin.cpp)
-// and generated at 128 px per element.
+// Target hardware: PSP-1000 (32 MiB RAM, 2 MiB VRAM, ARK CFW, 443 MHz). The two
+// 8888 framebuffers take 1.1 MiB of VRAM, so textures live in main RAM and the
+// skin is procedural (see skin.cpp) at 128 px per element.
 #include <pspctrl.h>
 #include <pspdisplay.h>
 #include <pspgu.h>
@@ -50,16 +50,8 @@ bool read_file(const std::string& path, std::string& out) {
     return !out.empty();
 }
 
-// sceKernelGetSystemTimeWide does not resolve from this user-mode module (it is
-// exported for kernel threads), so the millisecond clock comes from the RTC,
-// which ticks at 1 MHz and works in user mode.
-void debug_log(const char* line) {
-    const SceUID fd = sceIoOpen("ms0:/PSP/GAME/OSUPSP/debug.txt",
-                                PSP_O_WRONLY | PSP_O_CREAT | PSP_O_APPEND, 0777);
-    if (fd < 0) return;
-    sceIoWrite(fd, line, static_cast<int>(std::strlen(line)));
-    sceIoClose(fd);
-}
+// The RTC ticks at 1 MHz and works in user mode; sceKernelGetSystemTimeWide does
+// not resolve from this kind of module.
 double now_ms() {
     u64 tick = 0;
     sceRtcGetCurrentTick(&tick);
@@ -123,7 +115,7 @@ InputState read_input(const SceCtrlData& pad) {
     return input;
 }
 
-void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, unsigned frames) {
+void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game) {
     const Beatmap& bm = game.map().map;
     const StandardDifficulty& diff = game.map().difficulty;
     const double now = game.time();
@@ -139,7 +131,7 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, unsig
                 abgr(28, 28, 36));
     r.draw_rect(kPlayfieldScreenX, kPlayfieldScreenY, kPlayfieldScreenWidth, 1.0f, abgr(70, 70, 96));
 
-    // Slider tracks first, as dots along the polyline (cheap and rotation-free).
+    // Slider tracks as dots along the polyline: cheap and needs no rotation.
     for (size_t i = 0; i < bm.objects.size(); ++i) {
         const HitObject& obj = bm.objects[i];
         if (obj.kind != ObjectKind::Slider) continue;
@@ -178,7 +170,7 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, unsig
         const Vec2 screen = playfield_to_screen(obj.pos);
         const unsigned int tint = combo_tint(i);
 
-        // Approach ring: shrinks from 3.2x to 1x of the circle radius.
+        // Approach ring shrinks from 3.2x to 1x of the circle radius.
         const double appear = obj.time - preempt;
         const double span = std::max(1.0, obj.time - appear);
         const float progress = static_cast<float>(std::clamp((now - appear) / span, 0.0, 1.0));
@@ -198,8 +190,7 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, unsig
     }
 
     const Vec2 cursor = playfield_to_screen(game.cursor());
-    const float cursor_size = 48.0f * kPlayfieldScale;
-    draw_round(r, t.cursor, t, cursor.x, cursor.y, cursor_size, abgr(255, 255, 255, 255));
+    draw_round(r, t.cursor, t, cursor.x, cursor.y, 48.0f * kPlayfieldScale, abgr(255, 255, 255, 255));
 
     // HUD.
     const GameplayStats& stats = game.stats();
@@ -214,13 +205,6 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, unsig
     std::snprintf(text, sizeof(text), "%d", stats.score);
     r.draw_text(6.0f, kScreenHeight - 32.0f, 0.9f, text, abgr(160, 170, 190));
 
-    // Debug readout: song time in seconds, so a frozen clock is immediately visible.
-    std::snprintf(text, sizeof(text), "%d", static_cast<int>(now / 1000.0));
-    r.draw_text_right(kScreenWidth - 6.0f, kScreenHeight - 30.0f, 0.8f, text, abgr(130, 140, 160));
-
-    std::snprintf(text, sizeof(text), "%u", frames);
-    r.draw_text_right(kScreenWidth - 6.0f, kScreenHeight - 14.0f, 0.8f, text, abgr(110, 120, 140));
-
     const float bar_x = kScreenWidth - 24.0f;
     const float bar_h = 180.0f;
     const float bar_y = 52.0f;
@@ -234,7 +218,7 @@ void render_demo(Renderer& r, const Textures& t, double time_ms, Vec2 cursor) {
                 abgr(28, 28, 36));
     r.draw_rect(kPlayfieldScreenX, kPlayfieldScreenY, kPlayfieldScreenWidth, 1.0f, abgr(70, 70, 96));
 
-    // Two drifting circles so the demo still proves textures, tinting and input.
+    // Shown when no map was found: proves textures, tinting and stick input work.
     const float cx = kPlayfieldScreenX + kPlayfieldScreenWidth * 0.5f;
     const float cy = kPlayfieldScreenY + kPlayfieldScreenHeight * 0.5f;
     const float pulse = 40.0f + 8.0f * static_cast<float>(std::sin(time_ms * 0.004));
@@ -254,20 +238,6 @@ bool load_beatmap(const std::string& path, PlayableBeatmap& out, std::string& er
     }
     Beatmap map;
     if (!parse_osu(text, map, &error)) return false;
-
-    char line[320];
-    char head[49];
-    for (size_t i = 0; i < 48 && i < text.size(); ++i) {
-        const unsigned char c = static_cast<unsigned char>(text[i]);
-        head[i] = (c >= 32 && c < 127) ? static_cast<char>(c) : '.';
-    }
-    head[std::min<size_t>(48, text.size())] = 0;
-    std::snprintf(line, sizeof(line), "load path=%s size=%d v=%d objs=%d tp=%d head=%s\n",
-                  path.c_str(), static_cast<int>(text.size()), map.format_version,
-                  static_cast<int>(map.objects.size()),
-                  static_cast<int>(map.timing_points.size()), head);
-    debug_log(line);
-
     out = compile_beatmap(std::move(map));
     return true;
 }
@@ -275,8 +245,6 @@ bool load_beatmap(const std::string& path, PlayableBeatmap& out, std::string& er
 }  // namespace
 
 int main() {
-    osu_debug_sink = debug_log;
-
     Renderer renderer;
     renderer.init();
 
@@ -314,12 +282,6 @@ int main() {
         }
     }
 
-    {
-        char line[256];
-        std::snprintf(line, sizeof(line), "boot play=%d objects=%d err=%s\n", play ? 1 : 0,
-                      play ? static_cast<int>(play->map.objects.size()) : -1, error.c_str());
-        debug_log(line);
-    }
     std::optional<Gameplay> game;
     if (play) {
         GameplayConfig config;
@@ -340,20 +302,8 @@ int main() {
         sceCtrlReadBufferPositive(&pad, 1);
         if (pad.Buttons & PSP_CTRL_HOME) break;
 
-        static unsigned frames = 0;
-        ++frames;
         const InputState input = read_input(pad);
         const double song_time = now_ms() - start_time;
-
-        if (frames % 60 == 0 && game) {
-            char line[160];
-            std::snprintf(line, sizeof(line), "f=%u now=%ds start=%ds first=%d song=%d gt=%d hp=%d\n",
-                          frames, static_cast<int>(now_ms() / 1000.0),
-                          static_cast<int>(start_time / 1000.0), static_cast<int>(first_object),
-                          static_cast<int>(song_time), static_cast<int>(game->time()),
-                          static_cast<int>(game->stats().hp));
-            debug_log(line);
-        }
 
         if (game) {
             if (pad.Buttons & PSP_CTRL_SELECT) {
@@ -365,7 +315,7 @@ int main() {
 
         renderer.begin_frame(abgr(14, 14, 18));
         if (game) {
-            render_gameplay(renderer, textures, *game, frames);
+            render_gameplay(renderer, textures, *game);
         } else {
             render_demo(renderer, textures, now_ms(), input.cursor);
         }
