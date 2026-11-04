@@ -28,7 +28,7 @@ public:
     double position_ms() const { return position_ms_; }
 
 private:
-    static int thread_entry(SceSize args, void* argp);
+    static int thread_entry(unsigned int args, void* argp);
     void run();
     bool decode_more();
     bool refill_stream();

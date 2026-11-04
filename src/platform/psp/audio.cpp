@@ -44,9 +44,9 @@ void AudioPlayer::shutdown() {
 bool AudioPlayer::refill_stream() {
     if (file_ < 0 || handle_ < 0) return false;
 
-    unsigned char* destination = nullptr;
-    int to_write = 0;
-    int source_position = 0;
+    SceUChar8* destination = nullptr;
+    SceInt32 to_write = 0;
+    SceInt32 source_position = 0;
     if (sceMp3GetInfoToAddStreamData(handle_, &destination, &to_write, &source_position) < 0) {
         return false;
     }
@@ -120,9 +120,8 @@ void AudioPlayer::run() {
     active_ = false;
 }
 
-int AudioPlayer::thread_entry(SceSize, void* argp) {
-    auto* player = static_cast<AudioPlayer*>(argp);
-    if (player) player->run();
+int AudioPlayer::thread_entry(unsigned int, void*) {
+    if (g_active_player) g_active_player->run();
     return 0;
 }
 
@@ -141,11 +140,11 @@ bool AudioPlayer::play(const std::string& path) {
 
     SceMp3InitArg args{};
     args.mp3StreamStart = 0;
-    args.mp3StreamEnd = static_cast<unsigned int>(file_size_);
-    args.mp3Buf = reinterpret_cast<unsigned int>(g_mp3_buffer);
+    args.mp3StreamEnd = static_cast<SceOff>(file_size_);
+    args.mp3Buf = g_mp3_buffer;
     args.mp3BufSize = kMp3BufferSize;
-    args.mp3PcmBuf = reinterpret_cast<unsigned int>(g_pcm_buffer);
-    args.mp3PcmBufSize = kPcmBufferSize;
+    args.pcmBuf = g_pcm_buffer;
+    args.pcmBufSize = kPcmBufferSize;
 
     handle_ = sceMp3ReserveMp3Handle(&args);
     if (handle_ < 0) {
@@ -159,8 +158,8 @@ bool AudioPlayer::play(const std::string& path) {
         return false;
     }
 
-    sample_rate_ = sceMp3GetSampleRate(handle_);
-    channels_ = sceMp3GetChannels(handle_);
+    sample_rate_ = sceMp3GetSamplingRate(handle_);
+    channels_ = sceMp3GetMp3ChannelNum(handle_);
     if (sample_rate_ <= 0) sample_rate_ = 44100;
     if (channels_ <= 0) channels_ = 2;
 
@@ -186,7 +185,7 @@ bool AudioPlayer::play(const std::string& path) {
         release();
         return false;
     }
-    sceKernelStartThread(thread_id_, sizeof(this), &g_active_player);
+    sceKernelStartThread(thread_id_, 0, nullptr);
     return true;
 }
 
