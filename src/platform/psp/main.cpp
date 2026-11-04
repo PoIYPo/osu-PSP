@@ -298,6 +298,12 @@ int main() {
         }
     }
 
+    {
+        char line[256];
+        std::snprintf(line, sizeof(line), "boot play=%d objects=%d err=%s\n", play ? 1 : 0,
+                      play ? static_cast<int>(play->map.objects.size()) : -1, error.c_str());
+        debug_log(line);
+    }
     std::optional<Gameplay> game;
     if (play) {
         GameplayConfig config;
@@ -325,10 +331,11 @@ int main() {
 
         if (frames % 60 == 0 && game) {
             char line[160];
-            std::snprintf(line, sizeof(line), "f=%u now=%d start=%d first=%d song=%d gt=%d hp=%d\n",
-                          frames, static_cast<int>(now_ms()), static_cast<int>(start_time),
-                          static_cast<int>(first_object), static_cast<int>(song_time),
-                          static_cast<int>(game->time()), static_cast<int>(game->stats().hp));
+            std::snprintf(line, sizeof(line), "f=%u now=%ds start=%ds first=%d song=%d gt=%d hp=%d\n",
+                          frames, static_cast<int>(now_ms() / 1000.0),
+                          static_cast<int>(start_time / 1000.0), static_cast<int>(first_object),
+                          static_cast<int>(song_time), static_cast<int>(game->time()),
+                          static_cast<int>(game->stats().hp));
             debug_log(line);
         }
 
