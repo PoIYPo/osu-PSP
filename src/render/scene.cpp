@@ -10,15 +10,6 @@ namespace osu {
 
 namespace {
 
-Color combo_color(int combo) {
-    static const Color palette[] = {
-        Color::rgb(255, 120, 160), Color::rgb(120, 200, 255), Color::rgb(255, 200, 110),
-        Color::rgb(160, 230, 150), Color::rgb(200, 160, 255),
-    };
-    const int index = (combo / 8) % 5;
-    return palette[index];
-}
-
 }  // namespace
 
 void draw_text(Framebuffer& fb, float x, float y, float pixel_size, const char* text, Color color) {
@@ -80,7 +71,7 @@ void render_scene(Framebuffer& fb, const Gameplay& game) {
 
         const SliderGeometry& geo = game.map().sliders[i];
         const std::vector<Vec2>& pts = geo.path.points();
-        const Color track = Color::rgba(90, 120, 160, 90);
+        const Color track = Color::rgba(214, 214, 220, 150);
         for (size_t k = 1; k < pts.size(); ++k) {
             fb.thick_line(playfield_to_screen(pts[k - 1]), playfield_to_screen(pts[k]),
                           3.0f, track);
@@ -109,7 +100,6 @@ void render_scene(Framebuffer& fb, const Gameplay& game) {
         if (now < obj.time - preempt || now > disappear) continue;
         if (state == ObjectState::Hit && !is_slider) continue;
 
-        const Color color = combo_color(static_cast<int>(i));
         const Vec2 screen = playfield_to_screen(obj.pos);
 
         // Approach ring shrinks as the hit time approaches.
@@ -120,11 +110,10 @@ void render_scene(Framebuffer& fb, const Gameplay& game) {
         fb.stroke_circle(screen.x, screen.y, approach_radius, 2.0f,
                          Color::rgba(255, 255, 255, static_cast<int>(70 + 120 * progress)));
 
-        // Hit circle: translucent body, bright rim; the number is drawn later.
-        fb.fill_disc(screen.x, screen.y, radius, Color::rgba(color.r, color.g, color.b, 70));
-        fb.stroke_circle(screen.x, screen.y, radius, 4.0f, Color::rgba(color.r, color.g, color.b, 235));
-        fb.stroke_circle(screen.x, screen.y, radius + 3.0f, 3.0f,
-                         Color::rgba(color.r, color.g, color.b, 45));
+        // Hit circle: grey translucent body with a white rim (monochrome skin).
+        fb.fill_disc(screen.x, screen.y, radius, Color::rgba(158, 158, 168, 80));
+        fb.stroke_circle(screen.x, screen.y, radius, 4.0f, Color::rgb(255, 255, 255));
+        fb.stroke_circle(screen.x, screen.y, radius + 3.0f, 3.0f, Color::rgba(255, 255, 255, 45));
         if (obj.number > 0 && radius > 6.0f) labels.push_back({screen, obj.number});
 
         // Slider ball rides the path; the player only holds the button (PSP rule).

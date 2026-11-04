@@ -130,12 +130,6 @@ void draw_glow_ring(Image& img, float cx, float cy, float radius, float thicknes
         }
     }
 }
-void draw_rect(Image& img, int x0, int y0, int w, int h, Rgba color) {
-    for (int y = y0; y < y0 + h; ++y) {
-        for (int x = x0; x < x0 + w; ++x) blend(img, x, y, color);
-    }
-}
-
 }  // namespace
 
 Skin make_default_skin(int size) {
@@ -149,8 +143,9 @@ Skin make_default_skin(int size) {
     const float ring_thickness = std::max(6.0f, size * 0.11f);
     const float glow_width = size * 0.16f;
     skin.hit_circle.resize(size, size);
+    // Monochrome skin: grey translucent body, white rim and glow.
     draw_glow_ring(skin.hit_circle, half, half, radius - ring_thickness * 0.5f, ring_thickness,
-                   glow_width, {1.0f, 1.0f, 1.0f, 0.95f}, {1.0f, 1.0f, 1.0f, 0.18f});
+                   glow_width, {1.0f, 1.0f, 1.0f, 0.95f}, {0.62f, 0.62f, 0.66f, 0.32f});
 
     skin.hit_circle_overlay.resize(size, size);
     draw_ring(skin.hit_circle_overlay, half, half, radius * 0.78f, 2.0f, {1.0f, 1.0f, 1.0f, 0.55f});
@@ -161,8 +156,9 @@ Skin make_default_skin(int size) {
               {1.0f, 1.0f, 1.0f, 0.85f});
 
     skin.slider_ball.resize(size, size);
-    draw_disc(skin.slider_ball, half, half, radius * 0.55f, {1.0f, 0.9f, 0.5f, 1.0f}, 0.5f,
-              {1.0f, 1.0f, 0.85f, 1.0f});
+    draw_disc(skin.slider_ball, half, half, radius * 0.55f, {0.55f, 0.9f, 1.0f, 1.0f}, 0.5f,
+              {0.85f, 0.98f, 1.0f, 1.0f});
+    draw_ring(skin.slider_ball, half, half, radius * 0.78f, 3.0f, {0.55f, 0.9f, 1.0f, 0.55f});
     draw_ring(skin.slider_ball, half, half, radius * 0.55f, 2.0f, {1.0f, 1.0f, 1.0f, 0.9f});
 
     skin.follow_circle.resize(size, size);

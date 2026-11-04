@@ -238,7 +238,7 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, bool 
     }
     for (size_t index : visible_sliders) {
         stamp_path(r, t.dot, t, game.map().sliders[index].path.points(), radius,
-                   combo_tint(index), stamp_step);
+                   abgr(214, 214, 220, 255), stamp_step);
     }
 
     struct NumberLabel {
@@ -271,7 +271,7 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, bool 
         if (state == ObjectState::Hit && !is_slider) continue;
 
         const Vec2 screen = playfield_to_screen(obj.pos);
-        const unsigned int tint = combo_tint(i);
+        const unsigned int tint = abgr(255, 255, 255, 255);  // colours are baked in the skin
 
         // Approach ring shrinks from 3.2x to 1x of the circle radius.
         const double appear = obj.time - preempt;
