@@ -9,6 +9,7 @@
 #include <pspgu.h>
 #include <pspiofilemgr.h>
 #include <pspkernel.h>
+#include <psprtc.h>
 #include <pspuser.h>
 
 #include <algorithm>
