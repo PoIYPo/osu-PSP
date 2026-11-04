@@ -266,17 +266,6 @@ void render_demo(Renderer& r, const Textures& t, double time_ms, Vec2 cursor) {
                 abgr(28, 28, 36));
     r.draw_rect(kPlayfieldScreenX, kPlayfieldScreenY, kPlayfieldScreenWidth, 1.0f, abgr(70, 70, 96));
 
-    // First seconds of a map: explain the one rule that differs from the original.
-    if (now < bm.first_object_time() + 6000.0) {
-        const char* hint = "SLIDERS AUTO-FOLLOW";
-        const float scale = 1.1f;
-        const float text_w = static_cast<float>(std::strlen(hint)) * kGlyphAdvance * scale;
-        const float bx = kPlayfieldScreenX + (kPlayfieldScreenWidth - text_w) * 0.5f;
-        const float by = kPlayfieldScreenY + 12.0f;
-        r.draw_rect(bx - 6.0f, by - 4.0f, text_w + 12.0f, 5.0f * scale + 8.0f, abgr(0, 0, 0, 150));
-        r.draw_text(bx, by, scale, hint, abgr(235, 240, 255));
-    }
-
     // Shown when no map was found: proves textures, tinting and stick input work.
     const float cx = kPlayfieldScreenX + kPlayfieldScreenWidth * 0.5f;
     const float cy = kPlayfieldScreenY + kPlayfieldScreenHeight * 0.5f;
