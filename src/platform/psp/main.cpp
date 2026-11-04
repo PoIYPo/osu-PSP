@@ -275,6 +275,8 @@ bool load_beatmap(const std::string& path, PlayableBeatmap& out, std::string& er
 }  // namespace
 
 int main() {
+    osu_debug_sink = debug_log;
+
     Renderer renderer;
     renderer.init();
 

@@ -141,6 +141,10 @@ struct Beatmap {
     }
 };
 
+// Optional debug hook: when set, the parser reports what it sees. Used by the PSP
+// build to debug parsing on the device without a debugger.
+extern void (*osu_debug_sink)(const char* message);
+
 // Parses an .osu document from memory.
 //
 // Returns false on structural errors (unknown object type, malformed timing point,

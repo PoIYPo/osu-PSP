@@ -12,6 +12,14 @@
 
 namespace osu {
 
+void (*osu_debug_sink)(const char*) = nullptr;
+
+namespace {
+void dbg(const char* message) {
+    if (osu_debug_sink) osu_debug_sink(message);
+}
+}  // namespace
+
 const char* game_mode_name(GameMode mode) {
     switch (mode) {
         case GameMode::Standard: return "osu!standard";
@@ -334,6 +342,11 @@ bool parse_key_value(Section section, std::string_view key, std::string_view val
 
 bool parse_osu(std::string_view text, Beatmap& out, std::string* error) {
     out = Beatmap{};
+    {
+        char dbg_line[64];
+        std::snprintf(dbg_line, sizeof(dbg_line), "parse size=%d", static_cast<int>(text.size()));
+        dbg(dbg_line);
+    }
 
     // Strip a UTF-8 BOM: many beatmaps were re-saved on Windows with one.
     if (text.size() >= 3 && static_cast<unsigned char>(text[0]) == 0xEF &&
@@ -377,6 +390,13 @@ bool parse_osu(std::string_view text, Beatmap& out, std::string* error) {
             std::string_view name = trim(line.substr(1, close - 1));
             section = section_from_name(name);
             continue;
+        }
+
+        if (line_no <= 4) {
+            char dbg_line[96];
+            std::snprintf(dbg_line, sizeof(dbg_line), "line %d: %.60s", line_no,
+                          std::string(line).c_str());
+            dbg(dbg_line);
         }
 
         switch (section) {
