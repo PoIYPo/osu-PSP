@@ -147,6 +147,49 @@ void stamp_path(Renderer& r, const GuTexture& texture, const Textures& t,
     }
 }
 
+// Autoplay used for demos and for verifying rendering: it plays the map perfectly,
+// which is also the clearest way to see the auto-follow slider behaviour.
+InputState autoplay_input(const Gameplay& game, size_t& index, double t) {
+    const auto& objects = game.map().map.objects;
+
+    for (size_t i = 0; i < objects.size(); ++i) {
+        if (game.slider(i).following) {
+            InputState in;
+            in.cursor = game.cursor();
+            in.pressed = true;
+            return in;
+        }
+    }
+
+    while (index < objects.size() && game.state(index) != ObjectState::Pending) ++index;
+
+    InputState in;
+    if (index >= objects.size()) {
+        in.cursor = {kPlayfieldWidth * 0.5f, kPlayfieldHeight * 0.5f};
+        return in;
+    }
+
+    const HitObject& obj = objects[index];
+    switch (obj.kind) {
+        case ObjectKind::Spinner: {
+            const double duration = std::max(1.0, obj.end_time - obj.time);
+            const double progress = std::clamp((t - obj.time) / duration, 0.0, 1.0);
+            const float angle = static_cast<float>(progress * 2.0 * kPi * 3.0);
+            in.cursor = {obj.pos.x + std::cos(angle) * 90.0f, obj.pos.y + std::sin(angle) * 90.0f};
+            in.pressed = false;
+            break;
+        }
+        case ObjectKind::Slider:
+            in.cursor = obj.pos;
+            in.pressed = t >= obj.time - 2.0;
+            break;
+        default:
+            in.cursor = obj.pos;
+            in.pressed = t >= obj.time - 2.0 && t <= obj.time + 40.0;
+            break;
+    }
+    return in;
+}
 void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game) {
     const Beatmap& bm = game.map().map;
     const StandardDifficulty& diff = game.map().difficulty;
@@ -355,6 +398,11 @@ int main() {
     }
     bool using_audio = !audio_path.empty() && audio.play(audio_path);
 
+    // Drop autoplay.txt next to the EBOOT to watch the map play itself.
+    std::string autoplay_flag;
+    const bool autoplay = read_file(std::string(kAppDir) + "autoplay.txt", autoplay_flag);
+    size_t autoplay_index = 0;
+
     sceCtrlSetSamplingCycle(0);
     sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
 
@@ -371,7 +419,9 @@ int main() {
         sceCtrlReadBufferPositive(&pad, 1);
         if (pad.Buttons & PSP_CTRL_HOME) break;
 
-        const InputState input = read_input(pad);
+        const InputState input = (autoplay && game)
+                                     ? autoplay_input(*game, autoplay_index, now_ms() - start_time)
+                                     : read_input(pad);
 
         double song_time = 0.0;
         if (using_audio && audio.active()) {
@@ -388,6 +438,7 @@ int main() {
         if (game) {
             if (pad.Buttons & PSP_CTRL_SELECT) {
                 game->reset();
+                autoplay_index = 0;
                 start_time = now_ms() + lead_in - first_object;
                 last_song_time = first_object - lead_in;
                 rtc_anchor = now_ms();
