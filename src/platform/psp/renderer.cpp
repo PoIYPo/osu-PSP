@@ -20,7 +20,8 @@ constexpr int kBufferWidth = 512;
 constexpr unsigned int kDrawBuffer = 0x000000;
 constexpr unsigned int kDispBuffer = 0x088000;
 
-unsigned int __attribute__((aligned(16))) gu_list[16384];
+// 512 KB of command list: bitmap text is vertex-hungry (~6 words per lit pixel).
+unsigned int __attribute__((aligned(16))) gu_list[131072];
 
 struct Vertex {
     float u, v;
