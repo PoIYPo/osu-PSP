@@ -110,7 +110,7 @@ InputState read_input(const SceCtrlData& pad) {
     return input;
 }
 
-void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game) {
+void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, unsigned frames) {
     const Beatmap& bm = game.map().map;
     const StandardDifficulty& diff = game.map().difficulty;
     const double now = game.time();
@@ -203,7 +203,7 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game) {
 
     // Debug readout: song time in seconds, so a frozen clock is immediately visible.
     std::snprintf(text, sizeof(text), "%d", static_cast<int>(now / 1000.0));
-    r.draw_text_right(kScreenWidth - 6.0f, kScreenHeight - 30.0f, 0.8f, text, abgr(130, 140, 160));
+    r.draw_text_right(kScreenWidth - 6.0f, kScreenHeight - 30.0f, 0.8f, text, abgr(130, 140, 160));`r`n`r`n    std::snprintf(text, sizeof(text), "%u", frames);`r`n    r.draw_text_right(kScreenWidth - 6.0f, kScreenHeight - 14.0f, 0.8f, text, abgr(110, 120, 140));
 
     const float bar_x = kScreenWidth - 24.0f;
     const float bar_h = 180.0f;
@@ -294,7 +294,7 @@ int main() {
 
     SceCtrlData pad{};
     // Start the timeline so the first object reaches the playfield after 1.5 s.
-    const double lead_in = 1500.0;
+    const double lead_in = 30000.0;  // TEMP diagnostic: keep the playfield empty
     const double first_object = play ? play->map.first_object_time() : 0.0;
     double start_time = now_ms() + lead_in - first_object;
 
@@ -302,7 +302,7 @@ int main() {
         sceCtrlReadBufferPositive(&pad, 1);
         if (pad.Buttons & PSP_CTRL_HOME) break;
 
-        const InputState input = read_input(pad);
+        static unsigned frames = 0;`r`n        ++frames;`r`n        const InputState input = read_input(pad);
         const double song_time = now_ms() - start_time;
 
         if (game) {
@@ -315,7 +315,7 @@ int main() {
 
         renderer.begin_frame(abgr(14, 14, 18));
         if (game) {
-            render_gameplay(renderer, textures, *game);
+            render_gameplay(renderer, textures, *game, frames);
         } else {
             render_demo(renderer, textures, now_ms(), input.cursor);
         }
