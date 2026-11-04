@@ -52,15 +52,12 @@ bool read_file(const std::string& path, std::string& out) {
     return !out.empty();
 }
 
-// Wall clock from the display's vblank counter: unlike RTC/Kernel time sources it
-// is guaranteed to work in this module (we already depend on the display for
-// presentation), and it advances exactly once per frame.
-uint64_t g_vblank_base = 0;
-
+// The RTC ticks at 1 MHz and is the only time source that resolves in this
+// module (sceKernelGetSystemTimeWide lands in a kernel stub and returns 0).
 double now_ms() {
-    const uint64_t now = sceDisplayGetVcount();
-    const uint64_t elapsed = now >= g_vblank_base ? now - g_vblank_base : 0;
-    return static_cast<double>(elapsed) * (1000.0 / 59.94);
+    u64 tick = 0;
+    sceRtcGetCurrentTick(&tick);
+    return static_cast<double>(tick) / 1000.0;
 }
 
 struct Textures {
@@ -346,7 +343,7 @@ bool load_beatmap(const std::string& path, PlayableBeatmap& out, std::string& er
 int main() {
     Renderer renderer;
     renderer.init();
-    g_vblank_base = sceDisplayGetVcount();
+
 
     const Skin skin = make_default_skin(128);
     const Textures textures = upload_skin(renderer, skin);
@@ -404,11 +401,11 @@ int main() {
         const std::string dir = slash == std::string::npos ? std::string() : map_path.substr(0, slash + 1);
         audio_path = dir + play->map.audio_filename;
     }
-    // The MP3 path is opt-in while it is being validated on real hardware: drop
-    // audio.txt next to the EBOOT to enable it. Without it the RTC drives time.
-    std::string audio_flag;
-    const bool audio_enabled = read_file(std::string(kAppDir) + "audio.txt", audio_flag);
-    bool using_audio = audio_enabled && !audio_path.empty() && audio.play(audio_path);
+    // MP3 playback is implemented (platform/psp/audio.cpp) but disabled: linking
+    // libpspkernel to resolve sceAudio/sceMp3 also shadows RTC/display imports and
+    // freezes the timeline. Enable once the import conflict is solved.
+    bool using_audio = false;
+    (void)audio_path;
 
     // Drop autoplay.txt next to the EBOOT to watch the map play itself.
     std::string autoplay_flag;
