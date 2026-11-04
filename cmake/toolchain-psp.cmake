@@ -37,20 +37,21 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 # pspsdk headers live in <pspdev>/psp/sdk/include and libraries in
-# <pspdev>/psp/sdk/lib; psp-g++ does not look there on its own. The plain
-# psp/include and psp/lib paths are kept for toolchain layouts that use them.
+# <pspdev>/psp/sdk/lib; psp-g++ does not look there on its own. Plain -I is used
+# (not -isystem): marking the pspsdk directories as system directories confuses
+# the libstdc++ header chain on this toolchain (`<stdlib.h>` stops resolving).
 set(_psp_include "${_psp_root}/sdk/include")
 set(_psp_lib "${_psp_root}/sdk/lib")
-foreach(dir "${_psp_root}/include" "${_psp_root}/lib")
-    if(EXISTS "${dir}")
-        list(APPEND _psp_include "${dir}")
-        list(APPEND _psp_lib "${dir}")
-    endif()
-endforeach()
+if(EXISTS "${_psp_root}/include")
+    list(APPEND _psp_include "${_psp_root}/include")
+endif()
+if(EXISTS "${_psp_root}/lib")
+    list(APPEND _psp_lib "${_psp_root}/lib")
+endif()
 
 set(_psp_include_flags "")
 foreach(dir IN LISTS _psp_include)
-    string(APPEND _psp_include_flags " -isystem ${dir}")
+    string(APPEND _psp_include_flags " -I${dir}")
 endforeach()
 set(_psp_lib_flags "")
 foreach(dir IN LISTS _psp_lib)
