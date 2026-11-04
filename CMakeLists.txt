@@ -44,11 +44,11 @@ if(OSU_TARGET_PSP)
     target_compile_options(osu_psp PRIVATE -G0 -O2 -Wall -Wextra -D_PSP_FW_VERSION=661)
     # Order matters: pspsdk libraries are static archives.
     target_link_libraries(osu_psp PRIVATE
-        pspgu pspgum pspctrl pspdisplay pspge pspaudio pspmp3 psprtc pspuser pspkernel pspdebug
+        pspgu pspgum pspctrl pspdisplay pspge pspaudio pspmp3 psprtc pspuser pspdebug
     )
-    # libpspkernel's SysclibForKernel stub also defines strtol/strtod, which
-    # collides with newlib's libc. Every pspsdk project hits this.
-    target_link_options(osu_psp PRIVATE -Wl,--allow-multiple-definition)
+    # NOTE: libpspkernel is deliberately NOT linked. Its SysclibForKernel stubs
+    # (memchr/memcpy/strtol) shadow newlib's and do not resolve from a user-mode
+    # module, which silently breaks std::string_view::find and the beatmap parser.
     set_target_properties(osu_psp PROPERTIES SUFFIX ".elf")
 
     # Mandatory for every pspsdk ELF: rewrites the import table so the loader
