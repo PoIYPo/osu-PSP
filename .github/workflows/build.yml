@@ -40,6 +40,9 @@ jobs:
           echo "PSPDEV=$PSPDEV"
           psp-g++ --version | head -1
           ls "$PSPDEV/bin" | grep -iE 'sfo|pbp|prx' || true
+          echo "--- header dirs ---"
+          ls -d "$PSPDEV"/psp/sdk/include "$PSPDEV"/psp/include 2>/dev/null || true
+          ls "$PSPDEV"/psp/sdk/include/pspctrl.h "$PSPDEV"/psp/sdk/include/pspgu.h 2>/dev/null || true
 
       - name: Configure
         run: |

@@ -36,10 +36,30 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
-# pspsdk headers and libraries are not in the compiler's default search path.
-set(CMAKE_C_FLAGS_INIT "-I${_psp_root}/include")
-set(CMAKE_CXX_FLAGS_INIT "-I${_psp_root}/include")
-set(CMAKE_EXE_LINKER_FLAGS_INIT "-L${_psp_root}/lib")
+# pspsdk headers live in <pspdev>/psp/sdk/include and libraries in
+# <pspdev>/psp/sdk/lib; psp-g++ does not look there on its own. The plain
+# psp/include and psp/lib paths are kept for toolchain layouts that use them.
+set(_psp_include "${_psp_root}/sdk/include")
+set(_psp_lib "${_psp_root}/sdk/lib")
+foreach(dir "${_psp_root}/include" "${_psp_root}/lib")
+    if(EXISTS "${dir}")
+        list(APPEND _psp_include "${dir}")
+        list(APPEND _psp_lib "${dir}")
+    endif()
+endforeach()
+
+set(_psp_include_flags "")
+foreach(dir IN LISTS _psp_include)
+    string(APPEND _psp_include_flags " -isystem ${dir}")
+endforeach()
+set(_psp_lib_flags "")
+foreach(dir IN LISTS _psp_lib)
+    string(APPEND _psp_lib_flags " -L${dir}")
+endforeach()
+
+set(CMAKE_C_FLAGS_INIT "${_psp_include_flags}")
+set(CMAKE_CXX_FLAGS_INIT "${_psp_include_flags}")
+set(CMAKE_EXE_LINKER_FLAGS_INIT "${_psp_lib_flags}")
 
 # We only need to know that the compiler can emit code, not that it can link a
 # host executable (there is no OS to link against).
