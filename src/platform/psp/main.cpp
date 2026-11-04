@@ -444,11 +444,7 @@ int main() {
         const std::string dir = slash == std::string::npos ? std::string() : map_path.substr(0, slash + 1);
         audio_path = dir + play->map.audio_filename;
     }
-    // MP3 playback is implemented (platform/psp/audio.cpp) but disabled: linking
-    // libpspkernel to resolve sceAudio/sceMp3 also shadows RTC/display imports and
-    // freezes the timeline. Enable once the import conflict is solved.
-    bool using_audio = false;
-    (void)audio_path;
+    bool using_audio = !audio_path.empty() && audio.play(audio_path);
 
     // Drop autoplay.txt next to the EBOOT to watch the map play itself.
     std::string autoplay_flag;
