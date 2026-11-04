@@ -36,12 +36,20 @@ if(OSU_TARGET_PSP)
 
     add_executable(osu_psp src/platform/psp/main.cpp)
     target_link_libraries(osu_psp PRIVATE osu_core)
-    target_compile_options(osu_psp PRIVATE -G0 -O2 -Wall -Wextra)
+    target_compile_options(osu_psp PRIVATE -G0 -O2 -Wall -Wextra -D_PSP_FW_VERSION=661)
     # Order matters: pspsdk libraries are static archives.
     target_link_libraries(osu_psp PRIVATE
         pspgu pspgum pspctrl pspdisplay pspge pspaudio pspmp3 pspkernel pspuser pspdebug
     )
     set_target_properties(osu_psp PROPERTIES SUFFIX ".elf")
+
+    # Mandatory for every pspsdk ELF: rewrites the import table so the loader
+    # resolves sce* calls. Without it the app jumps to a garbage address right
+    # after boot ("Bad Execution Address" in PPSSPP).
+    add_custom_command(TARGET osu_psp POST_BUILD
+        COMMAND "${PSP_BIN_DIR}/psp-fixup-imports" $<TARGET_FILE:osu_psp>
+        COMMENT "psp-fixup-imports"
+    )
 else()
     # -----------------------------------------------------------------------
     # Host build: unit tests + a small CLI that dumps parsed beatmaps.
