@@ -26,7 +26,16 @@ TEST_CASE(skin_textures_are_transparent_outside_the_shape) {
                                 0xFFu);
     };
 
-    CHECK(alpha_at(skin.hit_circle, 64, 64) > 200);  // centre is opaque
+    // The centre is deliberately translucent so stacked notes show through it,
+    // while the rim is nearly opaque.
+    const int centre_alpha = alpha_at(skin.hit_circle, 64, 64);
+    CHECK_MSG(centre_alpha < 120, std::to_string(centre_alpha));
+    CHECK_MSG(centre_alpha > 0, std::to_string(centre_alpha));
+
+    int circle_rim = 0;
+    for (int r = 40; r < 64; ++r) circle_rim = std::max(circle_rim, alpha_at(skin.hit_circle, 64 + r, 64));
+    CHECK_MSG(circle_rim > 200, std::to_string(circle_rim));
+
     CHECK_EQ(alpha_at(skin.hit_circle, 0, 0), 0);    // corner is empty
     CHECK_EQ(alpha_at(skin.hit_circle, 127, 127), 0);
 
@@ -53,5 +62,5 @@ TEST_CASE(smaller_skin_still_contains_the_shapes) {
     const Skin skin = make_default_skin(96);
     CHECK_EQ(skin.hit_circle.width, 96);
     const size_t centre = static_cast<size_t>(48) * 96u + 48u;
-    CHECK(((skin.hit_circle.pixels[centre] >> 24) & 0xFFu) > 200u);
+    CHECK(((skin.hit_circle.pixels[centre] >> 24) & 0xFFu) < 120u);
 }

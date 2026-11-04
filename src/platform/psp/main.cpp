@@ -281,8 +281,9 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, bool 
         draw_round(r, t.approach, t, screen.x, screen.y, approach_radius,
                    abgr(255, 255, 255, static_cast<int>(70 + 120 * progress)));
 
+        // Translucent glowing ring: the centre stays see-through so stacked notes
+        // remain visible through each other.
         draw_round(r, t.hit_circle, t, screen.x, screen.y, radius, tint);
-        draw_round(r, t.overlay, t, screen.x, screen.y, radius * 0.78f, abgr(255, 255, 255, 90));
 
         if (obj.number > 0 && radius > 6.0f) labels.push_back({screen, radius, obj.number});
 
@@ -321,11 +322,11 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, bool 
         const Vec2 p = playfield_to_screen(trail[index]);
         const float fade = 1.0f - static_cast<float>(k) / static_cast<float>(trail_size);
         draw_round(r, t.dot, t, p.x, p.y, 9.0f * kPlayfieldScale,
-                   abgr(120, 230, 255, static_cast<int>(90.0f * fade)));
+                   abgr(255, 240, 200, static_cast<int>(80.0f * fade)));
     }
 
     const Vec2 cursor = playfield_to_screen(game.cursor());
-    draw_round(r, t.cursor, t, cursor.x, cursor.y, 48.0f * kPlayfieldScale, abgr(140, 235, 255, 255));
+    draw_round(r, t.cursor, t, cursor.x, cursor.y, 44.0f * kPlayfieldScale, abgr(255, 240, 200, 255));
 
     // HUD.
     const GameplayStats& stats = game.stats();

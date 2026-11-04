@@ -85,6 +85,51 @@ void draw_ring(Image& img, float cx, float cy, float radius, float thickness, Rg
     }
 }
 
+// Glowing ring: a bright rim with a soft halo outside and a translucent interior,
+// so a hit circle does not hide the notes stacked behind it.
+void draw_glow_ring(Image& img, float cx, float cy, float radius, float thickness, float glow,
+                    Rgba rim, Rgba fill) {
+    const float half = thickness * 0.5f;
+    const float outer = radius + half + glow + 1.0f;
+    const int x0 = std::max(0, static_cast<int>(std::floor(cx - outer)));
+    const int x1 = std::min(img.width - 1, static_cast<int>(std::ceil(cx + outer)));
+    const int y0 = std::max(0, static_cast<int>(std::floor(cy - outer)));
+    const int y1 = std::min(img.height - 1, static_cast<int>(std::ceil(cy + outer)));
+
+    for (int y = y0; y <= y1; ++y) {
+        for (int x = x0; x <= x1; ++x) {
+            const float dx = static_cast<float>(x) + 0.5f - cx;
+            const float dy = static_cast<float>(y) + 0.5f - cy;
+            const float d = std::sqrt(dx * dx + dy * dy);
+
+            const float rim_cov = std::clamp(half - std::fabs(d - radius) + 0.5f, 0.0f, 1.0f);
+            float glow_cov = 0.0f;
+            if (d > radius - half && glow > 0.0f) {
+                const float t = std::clamp((d - (radius - half)) / glow, 0.0f, 1.0f);
+                glow_cov = (1.0f - t) * (1.0f - t) * 0.55f;
+            }
+            const float fill_cov =
+                d < radius - half ? std::clamp(radius - half - d + 0.5f, 0.0f, 1.0f) : 0.0f;
+
+            // Rim wins over glow, fill stays translucent.
+            if (rim_cov > 0.0f) {
+                Rgba c = rim;
+                c.a *= rim_cov;
+                blend(img, x, y, c);
+            }
+            if (glow_cov > 0.001f) {
+                Rgba c = rim;
+                c.a = glow_cov;
+                blend(img, x, y, c);
+            }
+            if (fill_cov > 0.0f && fill.a > 0.0f) {
+                Rgba c = fill;
+                c.a *= fill_cov;
+                blend(img, x, y, c);
+            }
+        }
+    }
+}
 void draw_rect(Image& img, int x0, int y0, int w, int h, Rgba color) {
     for (int y = y0; y < y0 + h; ++y) {
         for (int x = x0; x < x0 + w; ++x) blend(img, x, y, color);
@@ -99,11 +144,13 @@ Skin make_default_skin(int size) {
     const float half = static_cast<float>(size) * 0.5f;
     const float radius = half - 2.0f;
 
-    // Hit circle: soft radial gradient plus a brighter rim, white for tinting.
+    // Hit circle: a glowing rim with a translucent middle. The see-through centre
+    // is what makes a stack of notes readable -- each one shows the next.
+    const float ring_thickness = std::max(6.0f, size * 0.11f);
+    const float glow_width = size * 0.16f;
     skin.hit_circle.resize(size, size);
-    draw_disc(skin.hit_circle, half, half, radius, {1.0f, 1.0f, 1.0f, 0.92f}, 0.62f,
-              {0.72f, 0.72f, 0.78f, 0.92f});
-    draw_ring(skin.hit_circle, half, half, radius - 1.0f, 3.0f, {1.0f, 1.0f, 1.0f, 0.95f});
+    draw_glow_ring(skin.hit_circle, half, half, radius - ring_thickness * 0.5f, ring_thickness,
+                   glow_width, {1.0f, 1.0f, 1.0f, 0.95f}, {1.0f, 1.0f, 1.0f, 0.18f});
 
     skin.hit_circle_overlay.resize(size, size);
     draw_ring(skin.hit_circle_overlay, half, half, radius * 0.78f, 2.0f, {1.0f, 1.0f, 1.0f, 0.55f});
@@ -121,12 +168,12 @@ Skin make_default_skin(int size) {
     skin.follow_circle.resize(size, size);
     draw_ring(skin.follow_circle, half, half, radius * 0.8f, 2.0f, {1.0f, 1.0f, 1.0f, 0.35f});
 
+    // Cursor: the same glowing ring look as the skin in the reference screenshot,
+    // with a small solid centre so the exact aim point stays readable.
     skin.cursor.resize(size, size);
-    draw_ring(skin.cursor, half, half, radius * 0.42f, 3.0f, {1.0f, 1.0f, 1.0f, 0.95f});
-    draw_rect(skin.cursor, static_cast<int>(half - radius * 0.42f) - 2, static_cast<int>(half) - 1,
-              6, 2, {1.0f, 1.0f, 1.0f, 0.9f});
-    draw_rect(skin.cursor, static_cast<int>(half) - 1, static_cast<int>(half - radius * 0.42f) - 2,
-              2, 6, {1.0f, 1.0f, 1.0f, 0.9f});
+    draw_glow_ring(skin.cursor, half, half, radius * 0.62f, std::max(5.0f, size * 0.08f),
+                   size * 0.14f, {1.0f, 1.0f, 1.0f, 0.95f}, {1.0f, 1.0f, 1.0f, 0.10f});
+    draw_disc(skin.cursor, half, half, radius * 0.10f, {1.0f, 1.0f, 1.0f, 0.95f});
 
     // Slider body stamp: a plain disc stamped densely along the path. It uses a
     // hard edge on purpose: the antialiased rims of overlapping stamps would show

@@ -120,9 +120,11 @@ void render_scene(Framebuffer& fb, const Gameplay& game) {
         fb.stroke_circle(screen.x, screen.y, approach_radius, 2.0f,
                          Color::rgba(255, 255, 255, static_cast<int>(70 + 120 * progress)));
 
-        // Hit circle; its combo number is drawn later, on top of every circle.
-        fb.fill_disc(screen.x, screen.y, radius, Color::rgba(color.r, color.g, color.b, 210));
-        fb.stroke_circle(screen.x, screen.y, radius, 2.0f, Color::rgb(250, 250, 255));
+        // Hit circle: translucent body, bright rim; the number is drawn later.
+        fb.fill_disc(screen.x, screen.y, radius, Color::rgba(color.r, color.g, color.b, 70));
+        fb.stroke_circle(screen.x, screen.y, radius, 4.0f, Color::rgba(color.r, color.g, color.b, 235));
+        fb.stroke_circle(screen.x, screen.y, radius + 3.0f, 3.0f,
+                         Color::rgba(color.r, color.g, color.b, 45));
         if (obj.number > 0 && radius > 6.0f) labels.push_back({screen, obj.number});
 
         // Slider ball rides the path; the player only holds the button (PSP rule).
@@ -146,9 +148,9 @@ void render_scene(Framebuffer& fb, const Gameplay& game) {
 
     // Cursor: a ring plus a crosshair, readable at 320x240.
     const Vec2 cur = playfield_to_screen(game.cursor());
-    fb.stroke_circle(cur.x, cur.y, 6.0f, 2.0f, Color::rgb(140, 235, 255));
-    fb.fill_rect(cur.x - 9.0f, cur.y - 1.0f, 18.0f, 2.0f, Color::rgba(140, 235, 255, 170));
-    fb.fill_rect(cur.x - 1.0f, cur.y - 9.0f, 2.0f, 18.0f, Color::rgba(140, 235, 255, 170));
+    fb.stroke_circle(cur.x, cur.y, 6.0f, 2.0f, Color::rgb(255, 240, 200));
+    fb.fill_rect(cur.x - 9.0f, cur.y - 1.0f, 18.0f, 2.0f, Color::rgba(255, 240, 200, 170));
+    fb.fill_rect(cur.x - 1.0f, cur.y - 9.0f, 2.0f, 18.0f, Color::rgba(255, 240, 200, 170));
 
     // HUD: accuracy on the left, combo on the right.
     const GameplayStats& stats = game.stats();
