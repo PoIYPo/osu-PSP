@@ -201,6 +201,10 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game) {
     std::snprintf(text, sizeof(text), "%d", stats.score);
     r.draw_text(6.0f, kScreenHeight - 32.0f, 0.9f, text, abgr(160, 170, 190));
 
+    // Debug readout: song time in seconds, so a frozen clock is immediately visible.
+    std::snprintf(text, sizeof(text), "%d", static_cast<int>(now / 1000.0));
+    r.draw_text_right(kScreenWidth - 6.0f, kScreenHeight - 30.0f, 0.8f, text, abgr(130, 140, 160));
+
     const float bar_x = kScreenWidth - 24.0f;
     const float bar_h = 180.0f;
     const float bar_y = 52.0f;
