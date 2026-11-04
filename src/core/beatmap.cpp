@@ -343,8 +343,11 @@ bool parse_key_value(Section section, std::string_view key, std::string_view val
 bool parse_osu(std::string_view text, Beatmap& out, std::string* error) {
     out = Beatmap{};
     {
-        char dbg_line[64];
-        std::snprintf(dbg_line, sizeof(dbg_line), "parse size=%d", static_cast<int>(text.size()));
+        char dbg_line[128];
+        std::snprintf(dbg_line, sizeof(dbg_line), "parse size=%d data=%08x nl=%d\n",
+                      static_cast<int>(text.size()),
+                      static_cast<unsigned>(reinterpret_cast<uintptr_t>(text.data())),
+                      static_cast<int>(text.find('\n')));
         dbg(dbg_line);
     }
 
@@ -448,6 +451,14 @@ bool parse_osu(std::string_view text, Beatmap& out, std::string* error) {
                      });
     std::stable_sort(out.objects.begin(), out.objects.end(),
                      [](const HitObject& a, const HitObject& b) { return a.time < b.time; });
+
+    {
+        char dbg_line[96];
+        std::snprintf(dbg_line, sizeof(dbg_line), "parsed objs=%d tp=%d\n",
+                      static_cast<int>(out.objects.size()),
+                      static_cast<int>(out.timing_points.size()));
+        dbg(dbg_line);
+    }
 
     return true;
 }

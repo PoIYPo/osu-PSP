@@ -30,3 +30,4 @@ testdata/
 build-psp/
 ppsspplog.txt
 dist/
+frames/
