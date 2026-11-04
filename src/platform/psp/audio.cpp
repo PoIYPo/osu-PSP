@@ -208,7 +208,7 @@ void AudioPlayer::release() {
 void AudioPlayer::stop() {
     running_ = false;
     if (thread_id_ >= 0) {
-        sceKernelWaitThreadEnd(thread_id_, nullptr, nullptr);
+        sceKernelWaitThreadEnd(thread_id_, nullptr);
         sceKernelDeleteThread(thread_id_);
         thread_id_ = -1;
     }
