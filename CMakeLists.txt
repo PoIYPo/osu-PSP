@@ -21,6 +21,7 @@ add_library(osu_core STATIC
     src/core/standard.cpp
     src/game/gameplay.cpp
     src/render/framebuffer.cpp
+    src/render/skin.cpp
     src/render/png.cpp
     src/render/scene.cpp
 )
@@ -38,7 +39,7 @@ if(OSU_TARGET_PSP)
     # -----------------------------------------------------------------------
     message(STATUS "Building for PSP with ${CMAKE_CXX_COMPILER}")
 
-    add_executable(osu_psp src/platform/psp/main.cpp)
+    add_executable(osu_psp src/platform/psp/main.cpp src/platform/psp/renderer.cpp)
     target_link_libraries(osu_psp PRIVATE osu_core)
     target_compile_options(osu_psp PRIVATE -G0 -O2 -Wall -Wextra -D_PSP_FW_VERSION=661)
     # Order matters: pspsdk libraries are static archives.
@@ -67,6 +68,7 @@ else()
         tests/test_slider.cpp
         tests/test_standard.cpp
         tests/test_gameplay.cpp
+        tests/test_skin.cpp
     )
     target_link_libraries(osu_tests PRIVATE osu_core)
     target_include_directories(osu_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
