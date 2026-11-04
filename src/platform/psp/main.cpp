@@ -190,7 +190,7 @@ InputState autoplay_input(const Gameplay& game, size_t& index, double t) {
     }
     return in;
 }
-void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game) {
+void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, bool autoplay_active) {
     const Beatmap& bm = game.map().map;
     const StandardDifficulty& diff = game.map().difficulty;
     const double now = game.time();
@@ -297,6 +297,10 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game) {
     std::snprintf(text, sizeof(text), "%d", stats.score);
     r.draw_text(6.0f, kScreenHeight - 32.0f, 0.9f, text, abgr(160, 170, 190));
 
+    if (autoplay_active) {
+        r.draw_text(6.0f, kScreenHeight - 18.0f, 0.8f, "AUTO", abgr(120, 200, 160));
+    }
+
     const float bar_x = kScreenWidth - 24.0f;
     const float bar_h = 180.0f;
     const float bar_y = 52.0f;
@@ -402,6 +406,8 @@ int main() {
     std::string autoplay_flag;
     const bool autoplay = read_file(std::string(kAppDir) + "autoplay.txt", autoplay_flag);
     size_t autoplay_index = 0;
+    double audio_last_position = -1.0;
+    double audio_last_change = now_ms();
 
     sceCtrlSetSamplingCycle(0);
     sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
@@ -419,9 +425,22 @@ int main() {
         sceCtrlReadBufferPositive(&pad, 1);
         if (pad.Buttons & PSP_CTRL_HOME) break;
 
-        const InputState input = (autoplay && game)
-                                     ? autoplay_input(*game, autoplay_index, now_ms() - start_time)
-                                     : read_input(pad);
+
+        // Watchdog: if the decoder stalls (bad file, unsupported rate), fall back
+        // to the wall clock instead of freezing the song.
+        if (using_audio && audio.active()) {
+            const double position = audio.position_ms();
+            const double wall = now_ms();
+            if (position > audio_last_position + 0.5) {
+                audio_last_position = position;
+                audio_last_change = wall;
+            } else if (wall - audio_last_change > 1500.0) {
+                audio.stop();
+                using_audio = false;
+                last_song_time = position;
+                rtc_anchor = wall;
+            }
+        }
 
         double song_time = 0.0;
         if (using_audio && audio.active()) {
@@ -434,6 +453,9 @@ int main() {
         } else {
             song_time = now_ms() - start_time;
         }
+        const InputState input = (autoplay && game)
+                                     ? autoplay_input(*game, autoplay_index, song_time)
+                                     : read_input(pad);
 
         if (game) {
             if (pad.Buttons & PSP_CTRL_SELECT) {
@@ -452,7 +474,7 @@ int main() {
 
         renderer.begin_frame(abgr(14, 14, 18));
         if (game) {
-            render_gameplay(renderer, textures, *game);
+            render_gameplay(renderer, textures, *game, autoplay);
         } else {
             render_demo(renderer, textures, now_ms(), input.cursor);
         }
