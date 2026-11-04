@@ -46,6 +46,9 @@ if(OSU_TARGET_PSP)
     target_link_libraries(osu_psp PRIVATE
         pspgu pspgum pspctrl pspdisplay pspge pspaudio pspmp3 pspkernel pspuser pspdebug
     )
+    # libpspkernel's SysclibForKernel stub also defines strtol/strtod, which
+    # collides with newlib's libc. Every pspsdk project hits this.
+    target_link_options(osu_psp PRIVATE -Wl,--allow-multiple-definition)
     set_target_properties(osu_psp PROPERTIES SUFFIX ".elf")
 
     # Mandatory for every pspsdk ELF: rewrites the import table so the loader
