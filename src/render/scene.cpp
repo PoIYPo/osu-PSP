@@ -63,6 +63,12 @@ void render_scene(Framebuffer& fb, const Gameplay& game) {
     fb.fill_rect(kPlayfieldScreenX, kPlayfieldScreenY, kPlayfieldScreenWidth, 1.0f,
                  Color::rgb(70, 70, 96));
 
+    struct NumberLabel {
+        Vec2 center;
+        int value;
+    };
+    std::vector<NumberLabel> labels;
+
     const auto& objects = bm.objects;
 
     // Slider paths first so the heads and the ball sit on top of them.
@@ -114,9 +120,10 @@ void render_scene(Framebuffer& fb, const Gameplay& game) {
         fb.stroke_circle(screen.x, screen.y, approach_radius, 2.0f,
                          Color::rgba(255, 255, 255, static_cast<int>(70 + 120 * progress)));
 
-        // Hit circle.
+        // Hit circle; its combo number is drawn later, on top of every circle.
         fb.fill_disc(screen.x, screen.y, radius, Color::rgba(color.r, color.g, color.b, 210));
         fb.stroke_circle(screen.x, screen.y, radius, 2.0f, Color::rgb(250, 250, 255));
+        if (obj.number > 0 && radius > 6.0f) labels.push_back({screen, obj.number});
 
         // Slider ball rides the path; the player only holds the button (PSP rule).
         if (is_slider && rt.following) {
@@ -127,11 +134,21 @@ void render_scene(Framebuffer& fb, const Gameplay& game) {
         }
     }
 
+    for (const NumberLabel& label : labels) {
+        char number[8];
+        std::snprintf(number, sizeof(number), "%d", label.value);
+        const float scale = 2.2f;
+        const float text_w = static_cast<float>(std::strlen(number)) * 4.0f * scale;
+        const float text_h = 5.0f * scale;
+        draw_text(fb, label.center.x - text_w * 0.5f, label.center.y - text_h * 0.5f, scale, number,
+                  Color::rgba(255, 255, 255, 245));
+    }
+
     // Cursor: a ring plus a crosshair, readable at 320x240.
     const Vec2 cur = playfield_to_screen(game.cursor());
-    fb.stroke_circle(cur.x, cur.y, 6.0f, 2.0f, Color::rgb(255, 255, 255));
-    fb.fill_rect(cur.x - 9.0f, cur.y - 1.0f, 18.0f, 2.0f, Color::rgba(255, 255, 255, 170));
-    fb.fill_rect(cur.x - 1.0f, cur.y - 9.0f, 2.0f, 18.0f, Color::rgba(255, 255, 255, 170));
+    fb.stroke_circle(cur.x, cur.y, 6.0f, 2.0f, Color::rgb(140, 235, 255));
+    fb.fill_rect(cur.x - 9.0f, cur.y - 1.0f, 18.0f, 2.0f, Color::rgba(140, 235, 255, 170));
+    fb.fill_rect(cur.x - 1.0f, cur.y - 9.0f, 2.0f, 18.0f, Color::rgba(140, 235, 255, 170));
 
     // HUD: accuracy on the left, combo on the right.
     const GameplayStats& stats = game.stats();

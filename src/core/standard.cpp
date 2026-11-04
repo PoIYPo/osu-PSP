@@ -110,7 +110,7 @@ void apply_stacking(Beatmap& map, const StandardDifficulty& diff) {
     constexpr float kSameSpot = 3.0f;   // osu pixels
     // 9 osu pixels is a bit more than desktop osu! uses: the PSP screen is only
     // 480x272 and the default offset was still unreadable on a 40 px circle.
-    constexpr float kOffset = 14.0f;    // osu pixels per stack level
+    constexpr float kOffset = 20.0f;    // osu pixels per stack level
 
     const size_t count = map.objects.size();
     for (size_t i = 0; i < count; ++i) {
@@ -152,8 +152,12 @@ PlayableBeatmap compile_beatmap(Beatmap map) {
     out.sliders.resize(count);
     out.object_end_times.resize(count, 0.0);
 
+    int combo_index = 0;
     for (size_t i = 0; i < count; ++i) {
         HitObject& obj = out.map.objects[i];
+
+        if (obj.new_combo || obj.kind == ObjectKind::Spinner) combo_index = 0;
+        obj.number = ++combo_index;
 
         switch (obj.kind) {
             case ObjectKind::Circle:

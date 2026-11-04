@@ -241,6 +241,13 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, bool 
                    combo_tint(index), stamp_step);
     }
 
+    struct NumberLabel {
+        Vec2 center;
+        float radius;
+        int value;
+    };
+    std::vector<NumberLabel> labels;
+
     // Back to front: in a stack the note that must be hit first ends up on top.
     for (size_t i = bm.objects.size(); i-- > 0;) {
         const HitObject& obj = bm.objects[i];
@@ -277,6 +284,8 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, bool 
         draw_round(r, t.hit_circle, t, screen.x, screen.y, radius, tint);
         draw_round(r, t.overlay, t, screen.x, screen.y, radius * 0.78f, abgr(255, 255, 255, 90));
 
+        if (obj.number > 0 && radius > 6.0f) labels.push_back({screen, radius, obj.number});
+
         if (is_slider && game.slider(i).following) {
             const Vec2 ball = playfield_to_screen(
                 game.map().sliders[i].path.position_at(game.slider(i).progress));
@@ -285,8 +294,38 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, bool 
         }
     }
 
+    // Numbers go on top of every circle, otherwise a stacked note covers the
+    // number of the note below it and the pile becomes unreadable again.
+    for (const NumberLabel& label : labels) {
+        char number[8];
+        std::snprintf(number, sizeof(number), "%d", label.value);
+        const float scale = 2.2f;
+        const float text_w = static_cast<float>(std::strlen(number)) * kGlyphAdvance * scale;
+        const float text_h = 5.0f * scale;
+        const float tx = label.center.x - text_w * 0.5f;
+        const float ty = label.center.y - text_h * 0.5f;
+        r.draw_text(tx + 1.0f, ty + 1.0f, scale, number, abgr(0, 0, 0, 170));
+        r.draw_text(tx, ty, scale, number, abgr(255, 255, 255, 245));
+    }
+    // Cursor: a cyan ring with a short fading trail, closer to the skins people
+    // are used to and easier to track against a busy playfield.
+    static Vec2 trail[10];
+    static int trail_size = 0;
+    static int trail_head = 0;
+    trail[trail_head] = game.cursor();
+    trail_head = (trail_head + 1) % 10;
+    if (trail_size < 10) ++trail_size;
+
+    for (int k = trail_size - 1; k >= 0; --k) {
+        const int index = (trail_head - 1 - k + 10) % 10;
+        const Vec2 p = playfield_to_screen(trail[index]);
+        const float fade = 1.0f - static_cast<float>(k) / static_cast<float>(trail_size);
+        draw_round(r, t.dot, t, p.x, p.y, 9.0f * kPlayfieldScale,
+                   abgr(120, 230, 255, static_cast<int>(90.0f * fade)));
+    }
+
     const Vec2 cursor = playfield_to_screen(game.cursor());
-    draw_round(r, t.cursor, t, cursor.x, cursor.y, 48.0f * kPlayfieldScale, abgr(255, 255, 255, 255));
+    draw_round(r, t.cursor, t, cursor.x, cursor.y, 48.0f * kPlayfieldScale, abgr(140, 235, 255, 255));
 
     // HUD.
     const GameplayStats& stats = game.stats();
