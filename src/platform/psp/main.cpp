@@ -254,6 +254,14 @@ bool load_beatmap(const std::string& path, PlayableBeatmap& out, std::string& er
     }
     Beatmap map;
     if (!parse_osu(text, map, &error)) return false;
+
+    char line[200];
+    std::snprintf(line, sizeof(line), "load size=%d v=%d objs=%d tp=%d\n",
+                  static_cast<int>(text.size()), map.format_version,
+                  static_cast<int>(map.objects.size()),
+                  static_cast<int>(map.timing_points.size()));
+    debug_log(line);
+
     out = compile_beatmap(std::move(map));
     return true;
 }
