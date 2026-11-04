@@ -108,7 +108,9 @@ namespace {
 void apply_stacking(Beatmap& map, const StandardDifficulty& diff) {
     const double window = diff.preempt_ms() * map.stack_leniency;
     constexpr float kSameSpot = 3.0f;   // osu pixels
-    constexpr float kOffset = 6.0f;     // osu pixels per stack level
+    // 9 osu pixels is a bit more than desktop osu! uses: the PSP screen is only
+    // 480x272 and the default offset was still unreadable on a 40 px circle.
+    constexpr float kOffset = 14.0f;    // osu pixels per stack level
 
     const size_t count = map.objects.size();
     for (size_t i = 0; i < count; ++i) {

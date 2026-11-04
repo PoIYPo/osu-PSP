@@ -162,10 +162,10 @@ TEST_CASE(stacked_objects_get_diagonal_offsets) {
     CHECK_EQ(play.map.objects[2].stack_height, 2);
 
     // Each level shifts the note diagonally so the pile becomes a small cascade.
-    CHECK_NEAR(play.map.objects[1].pos.x, 206.0, 1e-3);
-    CHECK_NEAR(play.map.objects[1].pos.y, 156.0, 1e-3);
-    CHECK_NEAR(play.map.objects[2].pos.x, 212.0, 1e-3);
-    CHECK_NEAR(play.map.objects[2].pos.y, 162.0, 1e-3);
+    CHECK_NEAR(play.map.objects[1].pos.x, 214.0, 1e-3);
+    CHECK_NEAR(play.map.objects[1].pos.y, 164.0, 1e-3);
+    CHECK_NEAR(play.map.objects[2].pos.x, 228.0, 1e-3);
+    CHECK_NEAR(play.map.objects[2].pos.y, 178.0, 1e-3);
 }
 
 TEST_CASE(distant_objects_are_not_stacked) {
@@ -206,8 +206,8 @@ TEST_CASE(stacking_also_shifts_slider_control_points) {
     if (play.map.objects.size() < 2) return;
     CHECK_EQ(play.map.objects[1].stack_height, 1);
     const Vec2& head = play.map.objects[1].slider.control_points[0];
-    CHECK_NEAR(head.x, 206.0, 1e-3);
-    CHECK_NEAR(head.y, 156.0, 1e-3);
+    CHECK_NEAR(head.x, 214.0, 1e-3);
+    CHECK_NEAR(head.y, 164.0, 1e-3);
 }
 
 TEST_CASE(circle_end_time_equals_start) {

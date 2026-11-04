@@ -241,7 +241,8 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, bool 
                    combo_tint(index), stamp_step);
     }
 
-    for (size_t i = 0; i < bm.objects.size(); ++i) {
+    // Back to front: in a stack the note that must be hit first ends up on top.
+    for (size_t i = bm.objects.size(); i-- > 0;) {
         const HitObject& obj = bm.objects[i];
         const ObjectState state = game.state(i);
         if (state == ObjectState::Missed) continue;

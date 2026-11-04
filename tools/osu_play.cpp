@@ -113,9 +113,14 @@ int main(int argc, char** argv) {
     const double end = play.map.last_object_time() + 800.0;
 
     std::vector<double> shot_times;
-    for (int i = 0; i < frame_count; ++i) {
-        const double frac = (frame_count == 1) ? 0.0 : static_cast<double>(i) / (frame_count - 1);
-        shot_times.push_back(start + (end - start) * frac);
+    const double at_time = arg_double(argc, argv, "--at", -1.0);
+    if (at_time >= 0.0) {
+        shot_times.push_back(at_time);
+    } else {
+        for (int i = 0; i < frame_count; ++i) {
+            const double frac = (frame_count == 1) ? 0.0 : static_cast<double>(i) / (frame_count - 1);
+            shot_times.push_back(start + (end - start) * frac);
+        }
     }
 
     if (!out_dir.empty()) std::filesystem::create_directories(out_dir);
@@ -125,6 +130,7 @@ int main(int argc, char** argv) {
     size_t cursor_object = 0;
 
     for (double t = start; t <= end; t += step) {
+        if (at_time >= 0.0 && t < 0.0) continue;
         while (cursor_object < play.map.objects.size() &&
                game.state(cursor_object) != ObjectState::Pending) {
             ++cursor_object;
