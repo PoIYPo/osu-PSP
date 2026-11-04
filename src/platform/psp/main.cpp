@@ -325,8 +325,10 @@ int main() {
 
         if (frames % 60 == 0 && game) {
             char line[160];
-            std::snprintf(line, sizeof(line), "frame=%u now=%.1f song=%.1f game=%.1f hp=%.1f\n", frames,
-                          now_ms(), song_time, game->time(), game->stats().hp);
+            std::snprintf(line, sizeof(line), "f=%u now=%d start=%d first=%d song=%d gt=%d hp=%d\n",
+                          frames, static_cast<int>(now_ms()), static_cast<int>(start_time),
+                          static_cast<int>(first_object), static_cast<int>(song_time),
+                          static_cast<int>(game->time()), static_cast<int>(game->stats().hp));
             debug_log(line);
         }
 
