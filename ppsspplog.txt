@@ -1,9 +1,7 @@
-58:48:223 ExecLoader   N[BOOT]: Core\System.cpp:634 PPSSPP v1.20.4
-58:48:223 ExecLoader   E[FILESYS]: FileSystems\ISOFileSystem.cpp:176 ISO looks bogus, expected CD001 signature not present? Giving up...
-58:48:260 root         E[JIT]: x86\CompBranch.cpp:527 Jump to invalid address: 0208d700 PC 088233ec LR 088044f4
-58:48:260 root         E[CPU]: MIPS\MIPSTables.cpp:918 MIPSCompileOp: Invalid instruction 446d8de6
-58:48:260 root         E[CPU]: MIPS\MIPSTables.cpp:918 MIPSCompileOp: Invalid instruction 446d8de6
-58:48:260 root         E[JIT]: x86\CompBranch.cpp:527 Jump to invalid address: 0208d700 PC 088233f4 LR 088044f4
-58:48:260 root         E[JIT]: x86\CompBranch.cpp:527 Jump to invalid address: 0208d750 PC 088233fc LR 088044f4
-58:48:260 root         E[JIT]: x86\CompBranch.cpp:272 Branch in RSRTComp delay slot at 088233fc in block starting at 088233ec
-58:48:276 root         N[BOOT]: UI\EmuScreen.cpp:391 Booted C:/Users/user/Documents/deepseek-harness/default-workspace/dist/EBOOT.PBP...
+02:53:958 ExecLoader   N[BOOT]: Core\System.cpp:634 PPSSPP v1.20.4
+02:53:958 ExecLoader   E[FILESYS]: FileSystems\ISOFileSystem.cpp:176 ISO looks bogus, expected CD001 signature not present? Giving up...
+02:54:040 update_threa E[HLE]: HLE\HLE.cpp:909 Unknown syscall: Module: '(unknown)' (module: 255 func: 4095)
+02:54:040 update_threa E[HLE]: HLE\HLE.cpp:909 Unknown syscall: Module: '(unknown)' (module: 255 func: 4095)
+02:54:040 update_threa E[HLE]: HLE\HLE.cpp:909 Unknown syscall: Module: '(unknown)' (module: 255 func: 4095)
+02:54:040 update_threa E[HLE]: HLE\HLE.cpp:909 Unknown syscall: Module: '(unknown)' (module: 255 func: 4095)
+02:54:057 user_main    N[BOOT]: UI\EmuScreen.cpp:391 Booted C:/Users/user/Documents/deepseek-harness/default-workspace/dist/EBOOT.PBP...
