@@ -1,5 +1,7 @@
 #include "render/scene.h"
 
+#include "render/glyphs.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -7,27 +9,6 @@
 namespace osu {
 
 namespace {
-
-// 3x5 glyphs, one byte per row, bits 2..0 = left..right.
-struct Glyph {
-    char c;
-    uint8_t rows[5];
-};
-
-constexpr Glyph kGlyphs[] = {
-    {'0', {7, 5, 5, 5, 7}}, {'1', {2, 6, 2, 2, 7}}, {'2', {7, 1, 7, 4, 7}},
-    {'3', {7, 1, 7, 1, 7}}, {'4', {5, 5, 7, 1, 1}}, {'5', {7, 4, 7, 1, 7}},
-    {'6', {7, 4, 7, 5, 7}}, {'7', {7, 1, 1, 1, 1}}, {'8', {7, 5, 7, 5, 7}},
-    {'9', {7, 5, 7, 1, 7}}, {'x', {5, 5, 2, 5, 5}}, {'%', {5, 1, 2, 4, 5}},
-    {'.', {0, 0, 0, 0, 2}}, {'-', {0, 0, 7, 0, 0}}, {' ', {0, 0, 0, 0, 0}},
-};
-
-const uint8_t* find_glyph(char c) {
-    for (const Glyph& g : kGlyphs) {
-        if (g.c == c) return g.rows;
-    }
-    return nullptr;
-}
 
 Color combo_color(int combo) {
     static const Color palette[] = {
@@ -44,7 +25,7 @@ void draw_text(Framebuffer& fb, float x, float y, float pixel_size, const char* 
     const float glyph_w = 3.0f * pixel_size + pixel_size;
     float cx = x;
     for (const char* p = text; *p; ++p) {
-        const uint8_t* rows = find_glyph(*p);
+        const uint8_t* rows = glyph_rows(*p);
         if (rows) {
             for (int row = 0; row < 5; ++row) {
                 for (int col = 0; col < 3; ++col) {

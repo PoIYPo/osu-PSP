@@ -22,6 +22,7 @@ add_library(osu_core STATIC
     src/game/gameplay.cpp
     src/render/framebuffer.cpp
     src/render/skin.cpp
+    src/render/glyphs.cpp
     src/render/png.cpp
     src/render/scene.cpp
 )

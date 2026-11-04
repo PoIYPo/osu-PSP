@@ -2,31 +2,10 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstring>
 
 namespace osu {
 
-const char* const kFontGlyphs = "0123456789x%.-";
-
 namespace {
-
-// 3x5 glyph rows, bits 2..0 = left..right (same shapes as the software renderer).
-constexpr uint8_t kGlyphRows[][5] = {
-    {7, 5, 5, 5, 7},  // 0
-    {2, 6, 2, 2, 7},  // 1
-    {7, 1, 7, 4, 7},  // 2
-    {7, 1, 7, 1, 7},  // 3
-    {5, 5, 7, 1, 1},  // 4
-    {7, 4, 7, 1, 7},  // 5
-    {7, 4, 7, 5, 7},  // 6
-    {7, 1, 1, 1, 1},  // 7
-    {7, 5, 7, 5, 7},  // 8
-    {7, 5, 7, 1, 7},  // 9
-    {5, 5, 2, 5, 5},  // x
-    {5, 1, 2, 4, 5},  // %
-    {0, 0, 0, 0, 2},  // .
-    {0, 0, 7, 0, 0},  // -
-};
 
 struct Rgba {
     float r = 0.0f, g = 0.0f, b = 0.0f, a = 0.0f;
@@ -36,7 +15,8 @@ void blend(Image& img, int x, int y, Rgba c) {
     if (x < 0 || y < 0 || x >= img.width || y >= img.height) return;
     if (c.a <= 0.0f) return;
     const float a = std::min(1.0f, c.a);
-    uint32_t& dst = img.pixels[static_cast<size_t>(y) * static_cast<size_t>(img.width) + static_cast<size_t>(x)];
+    uint32_t& dst =
+        img.pixels[static_cast<size_t>(y) * static_cast<size_t>(img.width) + static_cast<size_t>(x)];
     const float dr = static_cast<float>(dst & 0xFFu);
     const float dg = static_cast<float>((dst >> 8) & 0xFFu);
     const float db = static_cast<float>((dst >> 16) & 0xFFu);
@@ -53,10 +33,7 @@ void blend(Image& img, int x, int y, Rgba c) {
           static_cast<uint32_t>(std::lround(std::min(1.0f, r) * 255.0f));
 }
 
-// Coverage of a disc at distance d from the centre, antialiased over ~1 px.
-float disc_coverage(float d, float radius) {
-    return std::clamp(radius - d + 0.5f, 0.0f, 1.0f);
-}
+float disc_coverage(float d, float radius) { return std::clamp(radius - d + 0.5f, 0.0f, 1.0f); }
 
 void draw_disc(Image& img, float cx, float cy, float radius, Rgba color, float inner_scale = 0.0f,
                Rgba inner_color = {}) {
@@ -116,20 +93,6 @@ void draw_rect(Image& img, int x0, int y0, int w, int h, Rgba color) {
 
 }  // namespace
 
-const uint8_t* glyph_rows(char c) {
-    const int index = font_glyph_index(c);
-    if (index < 0) return nullptr;
-    return kGlyphRows[index];
-}
-
-int font_glyph_index(char c) {
-    const char* p = kFontGlyphs;
-    for (int i = 0; *p; ++p, ++i) {
-        if (*p == c) return i;
-    }
-    return -1;
-}
-
 Skin make_default_skin(int size) {
     Skin skin;
     skin.size = size;
@@ -165,24 +128,9 @@ Skin make_default_skin(int size) {
     draw_rect(skin.cursor, static_cast<int>(half) - 1, static_cast<int>(half - radius * 0.42f) - 2,
               2, 6, {1.0f, 1.0f, 1.0f, 0.9f});
 
-    // Font atlas: 3x5 glyphs scaled 2x inside 8x12 cells.
-    const int cells = static_cast<int>(std::strlen(kFontGlyphs));
-    skin.font_cell_w = 8;
-    skin.font_cell_h = 12;
-    // 128x16: both dimensions must be powers of two for the PSP's GE.
-    skin.font.resize(128, 16);
-    for (int i = 0; i < cells; ++i) {
-        const uint8_t* rows = kGlyphRows[i];
-        const int origin_x = i * skin.font_cell_w + 1;
-        for (int row = 0; row < 5; ++row) {
-            for (int col = 0; col < 3; ++col) {
-                if (rows[row] & (1u << (2 - col))) {
-                    draw_rect(skin.font, origin_x + col * 2, 1 + row * 2, 2, 2,
-                              {1.0f, 1.0f, 1.0f, 1.0f});
-                }
-            }
-        }
-    }
+    // Slider body stamp: a plain disc, stamped densely along the path.
+    skin.slider_dot.resize(size, size);
+    draw_disc(skin.slider_dot, half, half, radius, {1.0f, 1.0f, 1.0f, 1.0f});
 
     return skin;
 }

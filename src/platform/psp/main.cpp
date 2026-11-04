@@ -22,6 +22,7 @@
 #include "core/standard.h"
 #include "game/gameplay.h"
 #include "platform/psp/renderer.h"
+#include "render/glyphs.h"
 #include "render/layout.h"
 #include "render/skin.h"
 
@@ -65,6 +66,7 @@ struct Textures {
     GuTexture ball;
     GuTexture follow;
     GuTexture cursor;
+    GuTexture dot;
     float round_radius = 62.0f;  // radius of the disc inside the texture
     float skin_size = 128.0f;
 };
@@ -77,6 +79,7 @@ Textures upload_skin(Renderer& renderer, const Skin& skin) {
     textures.ball = renderer.upload(skin.slider_ball);
     textures.follow = renderer.upload(skin.follow_circle);
     textures.cursor = renderer.upload(skin.cursor);
+    textures.dot = renderer.upload(skin.slider_dot);
     textures.skin_size = static_cast<float>(skin.size);
     textures.round_radius = static_cast<float>(skin.size) * 0.5f - 2.0f;
     return textures;
@@ -115,6 +118,34 @@ InputState read_input(const SceCtrlData& pad) {
     return input;
 }
 
+// Stamps a disc along a slider polyline: the same trick as the original slider
+// body (a thick, round-capped track), just built from sprites instead of a mesh.
+void stamp_path(Renderer& r, const GuTexture& texture, const Textures& t,
+                const std::vector<Vec2>& points, float screen_radius, unsigned int tint,
+                float step) {
+    if (points.size() < 2) return;
+
+    Vec2 prev = playfield_to_screen(points[0]);
+    draw_round(r, texture, t, prev.x, prev.y, screen_radius, tint);
+
+    float accum = 0.0f;
+    for (size_t k = 1; k < points.size(); ++k) {
+        const Vec2 cur = playfield_to_screen(points[k]);
+        const float seg = distance(prev, cur);
+        if (seg <= 1e-4f) continue;
+
+        float pos = 0.0f;
+        while (accum + (seg - pos) >= step) {
+            pos += step - accum;
+            accum = 0.0f;
+            const Vec2 p = lerp(prev, cur, pos / seg);
+            draw_round(r, texture, t, p.x, p.y, screen_radius, tint);
+        }
+        accum += seg - pos;
+        prev = cur;
+    }
+}
+
 void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game) {
     const Beatmap& bm = game.map().map;
     const StandardDifficulty& diff = game.map().difficulty;
@@ -131,19 +162,36 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game) {
                 abgr(28, 28, 36));
     r.draw_rect(kPlayfieldScreenX, kPlayfieldScreenY, kPlayfieldScreenWidth, 1.0f, abgr(70, 70, 96));
 
-    // Slider tracks as dots along the polyline: cheap and needs no rotation.
+    // First seconds of a map: explain the one rule that differs from the original.
+    if (now < bm.first_object_time() + 6000.0) {
+        const char* hint = "SLIDERS AUTO-FOLLOW";
+        const float scale = 1.1f;
+        const float text_w = static_cast<float>(std::strlen(hint)) * kGlyphAdvance * scale;
+        const float bx = kPlayfieldScreenX + (kPlayfieldScreenWidth - text_w) * 0.5f;
+        const float by = kPlayfieldScreenY + 12.0f;
+        r.draw_rect(bx - 6.0f, by - 4.0f, text_w + 12.0f, 5.0f * scale + 8.0f, abgr(0, 0, 0, 150));
+        r.draw_text(bx, by, scale, hint, abgr(235, 240, 255));
+    }
+
+    // Slider bodies, drawn like the original: a round-capped track with a light
+    // border. Two passes so every border sits below every body.
+    std::vector<size_t> visible_sliders;
     for (size_t i = 0; i < bm.objects.size(); ++i) {
         const HitObject& obj = bm.objects[i];
         if (obj.kind != ObjectKind::Slider) continue;
         if (game.state(i) == ObjectState::Missed) continue;
         if (now < obj.time - preempt || now > obj.end_time) continue;
+        visible_sliders.push_back(i);
+    }
 
-        const std::vector<Vec2>& points = game.map().sliders[i].path.points();
-        const unsigned int tint = (combo_tint(i) & 0x00FFFFFFu) | 0x50000000u;
-        for (size_t k = 0; k < points.size(); k += 3) {
-            const Vec2 p = playfield_to_screen(points[k]);
-            r.draw_rect(p.x - 1.5f, p.y - 1.5f, 3.0f, 3.0f, tint);
-        }
+    const float stamp_step = std::max(3.0f, radius * 0.45f);
+    for (size_t index : visible_sliders) {
+        stamp_path(r, t.dot, t, game.map().sliders[index].path.points(), radius + 2.0f,
+                   abgr(245, 245, 250, 240), stamp_step);
+    }
+    for (size_t index : visible_sliders) {
+        stamp_path(r, t.dot, t, game.map().sliders[index].path.points(), radius,
+                   combo_tint(index), stamp_step);
     }
 
     for (size_t i = 0; i < bm.objects.size(); ++i) {
@@ -217,6 +265,17 @@ void render_demo(Renderer& r, const Textures& t, double time_ms, Vec2 cursor) {
     r.draw_rect(kPlayfieldScreenX, kPlayfieldScreenY, kPlayfieldScreenWidth, kPlayfieldScreenHeight,
                 abgr(28, 28, 36));
     r.draw_rect(kPlayfieldScreenX, kPlayfieldScreenY, kPlayfieldScreenWidth, 1.0f, abgr(70, 70, 96));
+
+    // First seconds of a map: explain the one rule that differs from the original.
+    if (now < bm.first_object_time() + 6000.0) {
+        const char* hint = "SLIDERS AUTO-FOLLOW";
+        const float scale = 1.1f;
+        const float text_w = static_cast<float>(std::strlen(hint)) * kGlyphAdvance * scale;
+        const float bx = kPlayfieldScreenX + (kPlayfieldScreenWidth - text_w) * 0.5f;
+        const float by = kPlayfieldScreenY + 12.0f;
+        r.draw_rect(bx - 6.0f, by - 4.0f, text_w + 12.0f, 5.0f * scale + 8.0f, abgr(0, 0, 0, 150));
+        r.draw_text(bx, by, scale, hint, abgr(235, 240, 255));
+    }
 
     // Shown when no map was found: proves textures, tinting and stick input work.
     const float cx = kPlayfieldScreenX + kPlayfieldScreenWidth * 0.5f;

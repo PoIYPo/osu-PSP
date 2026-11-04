@@ -1,4 +1,4 @@
-#include "platform/psp/renderer.h"
+#include "platform/psp/renderer.h"`n`n#include "render/glyphs.h"
 
 #include <pspdisplay.h>
 #include <pspgu.h>
