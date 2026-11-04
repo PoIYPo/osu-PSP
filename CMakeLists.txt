@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(OSU_ENABLE_AUDIO "Enable experimental MP3 playback (sceAudio/sceMp3)" OFF)
+
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
@@ -43,6 +45,10 @@ if(OSU_TARGET_PSP)
     add_executable(osu_psp src/platform/psp/main.cpp src/platform/psp/renderer.cpp src/platform/psp/audio.cpp)
     target_link_libraries(osu_psp PRIVATE osu_core)
     target_compile_options(osu_psp PRIVATE -G0 -O2 -Wall -Wextra -D_PSP_FW_VERSION=661)
+    if(OSU_ENABLE_AUDIO)
+        target_compile_definitions(osu_psp PRIVATE OSU_ENABLE_AUDIO=1)
+        message(STATUS "audio: enabled (experimental)")
+    endif()
     # Order matters: pspsdk libraries are static archives.
     target_link_libraries(osu_psp PRIVATE
         pspgu pspgum pspctrl pspdisplay pspge pspaudio pspmp3 psprtc pspuser pspdebug

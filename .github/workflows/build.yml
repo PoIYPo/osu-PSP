@@ -55,6 +55,15 @@ jobs:
       - name: Build ELF
         run: cmake --build build-psp -j"$(nproc)"
 
+      - name: Build audio test EBOOT
+        run: |
+          cmake -B build-psp-audio \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-psp.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DOSU_ENABLE_AUDIO=ON
+          cmake --build build-psp-audio -j"$(nproc)"
+          bash scripts/package_psp.sh build-psp-audio/osu_psp.elf build-psp-audio/EBOOT-audio.PBP
+
       - name: Package EBOOT.PBP
         run: bash scripts/package_psp.sh build-psp/osu_psp.elf build-psp/EBOOT.PBP
 
@@ -65,4 +74,5 @@ jobs:
           path: |
             build-psp/EBOOT.PBP
             build-psp/osu_psp.elf
+            build-psp-audio/EBOOT-audio.PBP
           if-no-files-found: warn

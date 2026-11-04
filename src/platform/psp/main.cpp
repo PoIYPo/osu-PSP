@@ -444,11 +444,13 @@ int main() {
         const std::string dir = slash == std::string::npos ? std::string() : map_path.substr(0, slash + 1);
         audio_path = dir + play->map.audio_filename;
     }
-    // MP3 playback stays disabled: sceAudio/sceMp3 imports do not resolve in this
-    // module (PPSSPP logs thousands of unknown syscalls), and linking libpspkernel
-    // to satisfy them breaks libc. See README for the open question.
+#if defined(OSU_ENABLE_AUDIO)
+    // Experimental: only enabled in the dedicated test build. See README.
+    bool using_audio = !audio_path.empty() && audio.play(audio_path);
+#else
     bool using_audio = false;
     (void)audio_path;
+#endif
 
     // Drop autoplay.txt next to the EBOOT to watch the map play itself.
     std::string autoplay_flag;
