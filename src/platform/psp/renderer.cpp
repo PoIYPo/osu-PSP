@@ -46,7 +46,7 @@ void Renderer::init() {
     sceGuDisable(GU_CULL_FACE);
     sceGuEnable(GU_BLEND);
     sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
-    sceGuTexFunc(GU_TF_MODULATE, GU_TF_RGBA);
+    sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
     sceGuTexEnvColor(0xFFFFFFFF);
 
     sceGuClearColor(0xFF000000);
