@@ -49,7 +49,8 @@ if(OSU_TARGET_PSP)
     )
     # libpspkernel is deliberately NOT linked: its SysclibForKernel stubs shadow
     # newlib (breaking the beatmap parser). sceAudio/sceMp3 imports do not resolve
-    # without it, so MP3 playback stays disabled; see README for the open issue.    set_target_properties(osu_psp PROPERTIES SUFFIX ".elf")
+    # without it, so MP3 playback stays disabled; see README for the open issue.
+    set_target_properties(osu_psp PROPERTIES SUFFIX ".elf")
 
     # Mandatory for every pspsdk ELF: rewrites the import table so the loader
     # resolves sce* calls. Without it the app jumps to a garbage address right
