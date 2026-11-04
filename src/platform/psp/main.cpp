@@ -297,6 +297,14 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, bool 
     std::snprintf(text, sizeof(text), "%d", stats.score);
     r.draw_text(6.0f, kScreenHeight - 32.0f, 0.9f, text, abgr(160, 170, 190));
 
+    {
+        // TEMP diagnostic: RTC seconds, so a frozen clock is visible.
+        char clock[16];
+        std::snprintf(clock, sizeof(clock), "%d", static_cast<int>(now / 1000.0) % 10000);
+        r.draw_text(kPlayfieldScreenX + 8.0f, kPlayfieldScreenY + kPlayfieldScreenHeight - 14.0f, 1.0f,
+                    clock, abgr(200, 200, 120));
+    }
+
     if (autoplay_active) {
         r.draw_text(6.0f, kScreenHeight - 18.0f, 0.8f, "AUTO", abgr(120, 200, 160));
     }
