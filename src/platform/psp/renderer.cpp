@@ -138,6 +138,20 @@ void Renderer::draw_sprite(const GuTexture& texture, float x, float y, float w, 
                    2, nullptr, v);
 }
 
+void Renderer::draw_sprite_crisp(const GuTexture& texture, float x, float y, float w, float h,
+                                 unsigned int tint_abgr) {
+    if (!texture.valid()) return;
+    current_ = GuTexture{};  // force a rebind so the filter mode changes
+    bind_texture(texture, false);
+
+    Vertex* v = static_cast<Vertex*>(sceGuGetMemory(sizeof(Vertex) * 2));
+    v[0] = {0.0f, 0.0f, tint_abgr, x, y, 0.0f};
+    v[1] = {static_cast<float>(texture.width), static_cast<float>(texture.height), tint_abgr,
+            x + w, y + h, 0.0f};
+    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D,
+                   2, nullptr, v);
+}
+
 void Renderer::draw_text(float x, float y, float scale, const char* text, unsigned int abgr_color) {
     sceGuDisable(GU_TEXTURE_2D);
     current_ = GuTexture{};

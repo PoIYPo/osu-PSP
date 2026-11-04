@@ -126,8 +126,11 @@ void stamp_path(Renderer& r, const GuTexture& texture, const Textures& t,
                 float step) {
     if (points.size() < 2) return;
 
+    const float scale = screen_radius / t.round_radius;
+    const float size = t.skin_size * scale;
+
     Vec2 prev = playfield_to_screen(points[0]);
-    draw_round(r, texture, t, prev.x, prev.y, screen_radius, tint);
+    r.draw_sprite_crisp(texture, prev.x - size * 0.5f, prev.y - size * 0.5f, size, size, tint);
 
     float accum = 0.0f;
     for (size_t k = 1; k < points.size(); ++k) {
@@ -140,7 +143,7 @@ void stamp_path(Renderer& r, const GuTexture& texture, const Textures& t,
             pos += step - accum;
             accum = 0.0f;
             const Vec2 p = lerp(prev, cur, pos / seg);
-            draw_round(r, texture, t, p.x, p.y, screen_radius, tint);
+            r.draw_sprite_crisp(texture, p.x - size * 0.5f, p.y - size * 0.5f, size, size, tint);
         }
         accum += seg - pos;
         prev = cur;

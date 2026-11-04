@@ -33,6 +33,10 @@ public:
 
     void draw_sprite(const GuTexture& texture, float x, float y, float w, float h,
                      unsigned int tint_abgr);
+    // Nearest-filtered variant: used for slider stamps, where linear filtering
+    // makes every overlapping edge show up as a ring.
+    void draw_sprite_crisp(const GuTexture& texture, float x, float y, float w, float h,
+                           unsigned int tint_abgr);
     void draw_rect(float x, float y, float w, float h, unsigned int abgr);
     // Solid 3x5 bitmap text batched into a single triangle list. Textured glyph
     // atlases did not survive the GU texture-cache switching on hardware, and
