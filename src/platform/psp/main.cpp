@@ -52,12 +52,15 @@ bool read_file(const std::string& path, std::string& out) {
     return !out.empty();
 }
 
-// The RTC ticks at 1 MHz and works in user mode; sceKernelGetSystemTimeWide does
-// not resolve from this kind of module.
+// Wall clock from the display's vblank counter: unlike RTC/Kernel time sources it
+// is guaranteed to work in this module (we already depend on the display for
+// presentation), and it advances exactly once per frame.
+uint64_t g_vblank_base = 0;
+
 double now_ms() {
-    u64 tick = 0;
-    sceRtcGetCurrentTick(&tick);
-    return static_cast<double>(tick) / 1000.0;
+    const uint64_t now = sceDisplayGetVcount();
+    const uint64_t elapsed = now >= g_vblank_base ? now - g_vblank_base : 0;
+    return static_cast<double>(elapsed) * (1000.0 / 59.94);
 }
 
 struct Textures {
@@ -297,14 +300,6 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, bool 
     std::snprintf(text, sizeof(text), "%d", stats.score);
     r.draw_text(6.0f, kScreenHeight - 32.0f, 0.9f, text, abgr(160, 170, 190));
 
-    {
-        // TEMP diagnostic: RTC seconds, so a frozen clock is visible.
-        char clock[16];
-        std::snprintf(clock, sizeof(clock), "%d", static_cast<int>(now / 1000.0) % 10000);
-        r.draw_text(kPlayfieldScreenX + 8.0f, kPlayfieldScreenY + kPlayfieldScreenHeight - 14.0f, 1.0f,
-                    clock, abgr(200, 200, 120));
-    }
-
     if (autoplay_active) {
         r.draw_text(6.0f, kScreenHeight - 18.0f, 0.8f, "AUTO", abgr(120, 200, 160));
     }
@@ -351,6 +346,7 @@ bool load_beatmap(const std::string& path, PlayableBeatmap& out, std::string& er
 int main() {
     Renderer renderer;
     renderer.init();
+    g_vblank_base = sceDisplayGetVcount();
 
     const Skin skin = make_default_skin(128);
     const Textures textures = upload_skin(renderer, skin);
