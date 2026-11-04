@@ -234,11 +234,11 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game, bool 
     const float stamp_step = std::max(2.0f, radius * 0.22f);
     for (size_t index : visible_sliders) {
         stamp_path(r, t.dot, t, game.map().sliders[index].path.points(), radius + 2.0f,
-                   abgr(245, 245, 250, 240), stamp_step);
+                   abgr(255, 255, 255, 170), stamp_step);
     }
     for (size_t index : visible_sliders) {
         stamp_path(r, t.dot, t, game.map().sliders[index].path.points(), radius,
-                   abgr(214, 214, 220, 255), stamp_step);
+                   abgr(200, 200, 210, 120), stamp_step);
     }
 
     struct NumberLabel {
