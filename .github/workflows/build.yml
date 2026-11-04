@@ -1,0 +1,63 @@
+name: build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host:
+    name: host (tests + dump)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+
+  psp:
+    name: psp (EBOOT)
+    runs-on: ubuntu-latest
+    container:
+      image: pspdev/pspdev:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain info
+        run: |
+          echo "PSPDEV=$PSPDEV"
+          psp-g++ --version | head -1
+          ls "$PSPDEV/bin" | grep -iE 'sfo|pbp|prx' || true
+
+      - name: Configure
+        run: |
+          cmake -B build-psp \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-psp.cmake \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build ELF
+        run: cmake --build build-psp -j"$(nproc)"
+
+      - name: Package EBOOT.PBP
+        run: bash scripts/package_psp.sh build-psp/osu_psp.elf build-psp/EBOOT.PBP
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: osu-psp-eboot
+          path: |
+            build-psp/EBOOT.PBP
+            build-psp/osu_psp.elf
+          if-no-files-found: warn

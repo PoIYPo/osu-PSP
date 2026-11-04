@@ -1,0 +1,30 @@
+# Build output
+build/
+out/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+*.o
+*.elf
+*.prx
+*.PBP
+*.SFO
+
+# Local toolchain (portable GCC/CMake, downloaded by .tools/fetch.mjs)
+.tools/
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# Test scratch
+tmp/
+
+# Downloaded beatmaps (user content, never committed)
+testdata/
+
+# PSP build output
+build-psp/
