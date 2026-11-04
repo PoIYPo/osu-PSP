@@ -53,6 +53,13 @@ bool read_file(const std::string& path, std::string& out) {
 // sceKernelGetSystemTimeWide does not resolve from this user-mode module (it is
 // exported for kernel threads), so the millisecond clock comes from the RTC,
 // which ticks at 1 MHz and works in user mode.
+void debug_log(const char* line) {
+    const SceUID fd = sceIoOpen("ms0:/PSP/GAME/OSUPSP/debug.txt",
+                                PSP_O_WRONLY | PSP_O_CREAT | PSP_O_APPEND, 0777);
+    if (fd < 0) return;
+    sceIoWrite(fd, line, static_cast<int>(std::strlen(line)));
+    sceIoClose(fd);
+}
 double now_ms() {
     u64 tick = 0;
     sceRtcGetCurrentTick(&tick);
@@ -315,6 +322,13 @@ int main() {
         ++frames;
         const InputState input = read_input(pad);
         const double song_time = now_ms() - start_time;
+
+        if (frames % 60 == 0 && game) {
+            char line[160];
+            std::snprintf(line, sizeof(line), "frame=%u now=%.1f song=%.1f game=%.1f hp=%.1f\n", frames,
+                          now_ms(), song_time, game->time(), game->stats().hp);
+            debug_log(line);
+        }
 
         if (game) {
             if (pad.Buttons & PSP_CTRL_SELECT) {
