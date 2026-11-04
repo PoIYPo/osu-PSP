@@ -17,19 +17,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Patch pspsdk archive
-        run: |
-          # libpspkernel ships SysclibForKernel stubs (memchr/memcpy/strtol) that
-          # shadow newlib and break std::string_view::find on the device. Drop
-          # those objects from a local copy so we keep sceAudio/sceMp3 imports
-          # and still resolve libc from newlib.
-          mkdir -p psp-libs
-          cp "$PSPDEV/psp/sdk/lib/libpspkernel.a" psp-libs/libpspkernel_patched.a
-          for m in $(psp-ar t psp-libs/libpspkernel_patched.a | grep -i 'SysclibForKernel'); do
-            psp-ar d psp-libs/libpspkernel_patched.a "$m"
-          done
-          echo "members left: $(psp-ar t psp-libs/libpspkernel_patched.a | wc -l)"
-
       - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
@@ -58,19 +45,6 @@ jobs:
           echo "--- header dirs ---"
           ls -d "$PSPDEV"/psp/sdk/include "$PSPDEV"/psp/include 2>/dev/null || true
           ls "$PSPDEV"/psp/sdk/include/pspctrl.h "$PSPDEV"/psp/sdk/include/pspgu.h 2>/dev/null || true
-
-      - name: Patch pspsdk archive
-        run: |
-          # libpspkernel ships SysclibForKernel stubs (memchr/memcpy/strtol) that
-          # shadow newlib and break std::string_view::find on the device. Drop
-          # those objects from a local copy so we keep sceAudio/sceMp3 imports
-          # and still resolve libc from newlib.
-          mkdir -p psp-libs
-          cp "$PSPDEV/psp/sdk/lib/libpspkernel.a" psp-libs/libpspkernel_patched.a
-          for m in $(psp-ar t psp-libs/libpspkernel_patched.a | grep -i 'SysclibForKernel'); do
-            psp-ar d psp-libs/libpspkernel_patched.a "$m"
-          done
-          echo "members left: $(psp-ar t psp-libs/libpspkernel_patched.a | wc -l)"
 
       - name: Configure
         run: |

@@ -45,13 +45,11 @@ if(OSU_TARGET_PSP)
     target_compile_options(osu_psp PRIVATE -G0 -O2 -Wall -Wextra -D_PSP_FW_VERSION=661)
     # Order matters: pspsdk libraries are static archives.
     target_link_libraries(osu_psp PRIVATE
-        pspgu pspgum pspctrl pspdisplay pspge pspaudio pspmp3 psprtc pspuser pspkernel_patched pspdebug
+        pspgu pspgum pspctrl pspdisplay pspge pspaudio pspmp3 psprtc pspuser pspdebug
     )
-    # We link a patched libpspkernel (see the CI step): the SysclibForKernel
-    # stubs are removed so newlib keeps memchr/memcpy/strtol, while sceAudio and
-    # sceMp3 imports still resolve.
-    target_link_directories(osu_psp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/psp-libs)
-    set_target_properties(osu_psp PROPERTIES SUFFIX ".elf")
+    # libpspkernel is deliberately NOT linked: its SysclibForKernel stubs shadow
+    # newlib (breaking the beatmap parser). sceAudio/sceMp3 imports do not resolve
+    # without it, so MP3 playback stays disabled; see README for the open issue.    set_target_properties(osu_psp PROPERTIES SUFFIX ".elf")
 
     # Mandatory for every pspsdk ELF: rewrites the import table so the loader
     # resolves sce* calls. Without it the app jumps to a garbage address right
