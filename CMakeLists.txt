@@ -44,7 +44,7 @@ if(OSU_TARGET_PSP)
     target_compile_options(osu_psp PRIVATE -G0 -O2 -Wall -Wextra -D_PSP_FW_VERSION=661)
     # Order matters: pspsdk libraries are static archives.
     target_link_libraries(osu_psp PRIVATE
-        pspgu pspgum pspctrl pspdisplay pspge pspaudio pspmp3 pspuser pspkernel pspdebug
+        pspgu pspgum pspctrl pspdisplay pspge pspaudio pspmp3 psprtc pspuser pspkernel pspdebug
     )
     # libpspkernel's SysclibForKernel stub also defines strtol/strtod, which
     # collides with newlib's libc. Every pspsdk project hits this.

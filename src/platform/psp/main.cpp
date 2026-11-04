@@ -49,8 +49,13 @@ bool read_file(const std::string& path, std::string& out) {
     return !out.empty();
 }
 
+// sceKernelGetSystemTimeWide does not resolve from this user-mode module (it is
+// exported for kernel threads), so the millisecond clock comes from the RTC,
+// which ticks at 1 MHz and works in user mode.
 double now_ms() {
-    return static_cast<double>(sceKernelGetSystemTimeWide()) / 1000.0;
+    u64 tick = 0;
+    sceRtcGetCurrentTick(&tick);
+    return static_cast<double>(tick) / 1000.0;
 }
 
 struct Textures {
@@ -297,7 +302,7 @@ int main() {
 
     SceCtrlData pad{};
     // Start the timeline so the first object reaches the playfield after 1.5 s.
-    const double lead_in = 30000.0;  // TEMP diagnostic: keep the playfield empty
+    const double lead_in = 1500.0;
     const double first_object = play ? play->map.first_object_time() : 0.0;
     double start_time = now_ms() + lead_in - first_object;
 
