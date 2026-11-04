@@ -19,6 +19,10 @@ add_library(osu_core STATIC
     src/core/timing.cpp
     src/core/slider_path.cpp
     src/core/standard.cpp
+    src/game/gameplay.cpp
+    src/render/framebuffer.cpp
+    src/render/png.cpp
+    src/render/scene.cpp
 )
 target_include_directories(osu_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
@@ -62,6 +66,7 @@ else()
         tests/test_timing.cpp
         tests/test_slider.cpp
         tests/test_standard.cpp
+        tests/test_gameplay.cpp
     )
     target_link_libraries(osu_tests PRIVATE osu_core)
     target_include_directories(osu_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
@@ -72,4 +77,7 @@ else()
 
     add_executable(osu_dump tools/osu_dump.cpp)
     target_link_libraries(osu_dump PRIVATE osu_core)
+
+    add_executable(osu_play tools/osu_play.cpp)
+    target_link_libraries(osu_play PRIVATE osu_core)
 endif()
