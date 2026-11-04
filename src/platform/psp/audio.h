@@ -22,6 +22,10 @@ public:
     bool play(const std::string& path);
     void stop();
 
+    // Gives up on a stalled stream without waiting for the decoder thread (which
+    // may be blocked in the audio channel). Leaks the thread/handle on purpose.
+    void abandon();
+
     bool active() const { return active_; }
 
     // Milliseconds of audio already played, or 0 when nothing is playing.

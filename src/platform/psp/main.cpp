@@ -400,7 +400,11 @@ int main() {
         const std::string dir = slash == std::string::npos ? std::string() : map_path.substr(0, slash + 1);
         audio_path = dir + play->map.audio_filename;
     }
-    bool using_audio = !audio_path.empty() && audio.play(audio_path);
+    // The MP3 path is opt-in while it is being validated on real hardware: drop
+    // audio.txt next to the EBOOT to enable it. Without it the RTC drives time.
+    std::string audio_flag;
+    const bool audio_enabled = read_file(std::string(kAppDir) + "audio.txt", audio_flag);
+    bool using_audio = audio_enabled && !audio_path.empty() && audio.play(audio_path);
 
     // Drop autoplay.txt next to the EBOOT to watch the map play itself.
     std::string autoplay_flag;
@@ -435,7 +439,7 @@ int main() {
                 audio_last_position = position;
                 audio_last_change = wall;
             } else if (wall - audio_last_change > 1500.0) {
-                audio.stop();
+                audio.abandon();
                 using_audio = false;
                 last_song_time = position;
                 rtc_anchor = wall;

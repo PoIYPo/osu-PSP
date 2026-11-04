@@ -205,6 +205,17 @@ void AudioPlayer::release() {
     carry_.clear();
 }
 
+void AudioPlayer::abandon() {
+    running_ = false;
+    active_ = false;
+    thread_id_ = -1;
+    channel_ = -1;
+    handle_ = -1;
+    file_ = -1;
+    carry_.clear();
+    if (g_active_player == this) g_active_player = nullptr;
+}
+
 void AudioPlayer::stop() {
     running_ = false;
     if (thread_id_ >= 0) {
