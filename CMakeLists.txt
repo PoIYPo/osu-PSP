@@ -40,7 +40,7 @@ if(OSU_TARGET_PSP)
     # -----------------------------------------------------------------------
     message(STATUS "Building for PSP with ${CMAKE_CXX_COMPILER}")
 
-    add_executable(osu_psp src/platform/psp/main.cpp src/platform/psp/renderer.cpp)
+    add_executable(osu_psp src/platform/psp/main.cpp src/platform/psp/renderer.cpp src/platform/psp/audio.cpp)
     target_link_libraries(osu_psp PRIVATE osu_core)
     target_compile_options(osu_psp PRIVATE -G0 -O2 -Wall -Wextra -D_PSP_FW_VERSION=661)
     # Order matters: pspsdk libraries are static archives.

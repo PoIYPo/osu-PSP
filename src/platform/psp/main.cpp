@@ -21,6 +21,7 @@
 
 #include "core/standard.h"
 #include "game/gameplay.h"
+#include "platform/psp/audio.h"
 #include "platform/psp/renderer.h"
 #include "render/glyphs.h"
 #include "render/layout.h"
@@ -303,6 +304,7 @@ int main() {
     // Songs/beatmap.osu next to the EBOOT.
     std::optional<PlayableBeatmap> play;
     std::string error;
+    std::string map_path;
     {
         std::string configured;
         if (read_file(std::string(kAppDir) + "map.txt", configured)) {
@@ -312,7 +314,10 @@ int main() {
                 std::string path = configured.substr(start, end - start + 1);
                 if (path.rfind("ms0:", 0) != 0) path = std::string(kAppDir) + path;
                 PlayableBeatmap loaded;
-                if (load_beatmap(path, loaded, error)) play = std::move(loaded);
+                if (load_beatmap(path, loaded, error)) {
+                    play = std::move(loaded);
+                    map_path = path;
+                }
             }
         }
         if (!play) {
@@ -324,6 +329,7 @@ int main() {
                 PlayableBeatmap loaded;
                 if (load_beatmap(candidate, loaded, error)) {
                     play = std::move(loaded);
+                    map_path = candidate;
                     break;
                 }
             }
@@ -337,6 +343,18 @@ int main() {
         game.emplace(*play, config);
     }
 
+    // Audio: when it starts, the song becomes the clock. Otherwise the wall clock
+    // (RTC) keeps the game running, just without sound.
+    AudioPlayer audio;
+    audio.init();
+    std::string audio_path;
+    if (play && !play->map.audio_filename.empty() && !map_path.empty()) {
+        const size_t slash = map_path.find_last_of('/');
+        const std::string dir = slash == std::string::npos ? std::string() : map_path.substr(0, slash + 1);
+        audio_path = dir + play->map.audio_filename;
+    }
+    bool using_audio = !audio_path.empty() && audio.play(audio_path);
+
     sceCtrlSetSamplingCycle(0);
     sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
 
@@ -345,18 +363,38 @@ int main() {
     const double lead_in = 1500.0;
     const double first_object = play ? play->map.first_object_time() : 0.0;
     double start_time = now_ms() + lead_in - first_object;
+    double last_song_time = first_object - lead_in;
+    double rtc_anchor = now_ms();
+    constexpr double kAudioOffsetMs = 0.0;  // calibration, adjustable later
 
     for (;;) {
         sceCtrlReadBufferPositive(&pad, 1);
         if (pad.Buttons & PSP_CTRL_HOME) break;
 
         const InputState input = read_input(pad);
-        const double song_time = now_ms() - start_time;
+
+        double song_time = 0.0;
+        if (using_audio && audio.active()) {
+            song_time = audio.position_ms() + kAudioOffsetMs;
+            last_song_time = song_time;
+            rtc_anchor = now_ms();
+        } else if (using_audio) {
+            // Song finished (or the stream died): continue on the wall clock.
+            song_time = last_song_time + (now_ms() - rtc_anchor);
+        } else {
+            song_time = now_ms() - start_time;
+        }
 
         if (game) {
             if (pad.Buttons & PSP_CTRL_SELECT) {
                 game->reset();
                 start_time = now_ms() + lead_in - first_object;
+                last_song_time = first_object - lead_in;
+                rtc_anchor = now_ms();
+                if (using_audio) {
+                    audio.stop();
+                    audio.play(audio_path);
+                }
             }
             game->update(song_time, input);
         }
@@ -370,6 +408,7 @@ int main() {
         renderer.end_frame();
     }
 
+    audio.shutdown();
     renderer.shutdown();
     sceKernelExitGame();
     return 0;
