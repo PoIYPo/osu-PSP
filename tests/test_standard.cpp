@@ -143,6 +143,73 @@ TEST_CASE(spinner_keeps_authored_end_time) {
     CHECK(play.sliders[0].path.empty());
 }
 
+TEST_CASE(stacked_objects_get_diagonal_offsets) {
+    Beatmap bm = base_map();
+    for (int i = 0; i < 3; ++i) {
+        HitObject circle;
+        circle.kind = ObjectKind::Circle;
+        circle.pos = {200.0f, 150.0f};
+        circle.time = 1000.0 + i * 100.0;  // inside the 420 ms stack window at AR9
+        bm.objects.push_back(circle);
+    }
+
+    PlayableBeatmap play = compile_beatmap(bm);
+    CHECK_EQ(play.map.objects.size(), 3u);
+    if (play.map.objects.size() != 3) return;
+
+    CHECK_EQ(play.map.objects[0].stack_height, 0);
+    CHECK_EQ(play.map.objects[1].stack_height, 1);
+    CHECK_EQ(play.map.objects[2].stack_height, 2);
+
+    // Each level shifts the note diagonally so the pile becomes a small cascade.
+    CHECK_NEAR(play.map.objects[1].pos.x, 206.0, 1e-3);
+    CHECK_NEAR(play.map.objects[1].pos.y, 156.0, 1e-3);
+    CHECK_NEAR(play.map.objects[2].pos.x, 212.0, 1e-3);
+    CHECK_NEAR(play.map.objects[2].pos.y, 162.0, 1e-3);
+}
+
+TEST_CASE(distant_objects_are_not_stacked) {
+    Beatmap bm = base_map();
+    HitObject a;
+    a.kind = ObjectKind::Circle;
+    a.pos = {100.0f, 100.0f};
+    a.time = 1000.0;
+    HitObject b = a;
+    b.pos = {300.0f, 200.0f};
+    b.time = 1050.0;
+    bm.objects.push_back(a);
+    bm.objects.push_back(b);
+
+    PlayableBeatmap play = compile_beatmap(bm);
+    CHECK_EQ(play.map.objects[0].stack_height, 0);
+    CHECK_EQ(play.map.objects[1].stack_height, 0);
+    CHECK_NEAR(play.map.objects[1].pos.x, 300.0, 1e-3);
+}
+
+TEST_CASE(stacking_also_shifts_slider_control_points) {
+    Beatmap bm = base_map();
+    HitObject base;
+    base.kind = ObjectKind::Circle;
+    base.pos = {200.0f, 150.0f};
+    base.time = 1000.0;
+    bm.objects.push_back(base);
+
+    HitObject slider;
+    slider.kind = ObjectKind::Slider;
+    slider.pos = {200.0f, 150.0f};
+    slider.time = 1100.0;
+    slider.slider.control_points = {{200.0f, 150.0f}, {300.0f, 150.0f}};
+    slider.slider.pixel_length = 100.0f;
+    bm.objects.push_back(slider);
+
+    PlayableBeatmap play = compile_beatmap(bm);
+    if (play.map.objects.size() < 2) return;
+    CHECK_EQ(play.map.objects[1].stack_height, 1);
+    const Vec2& head = play.map.objects[1].slider.control_points[0];
+    CHECK_NEAR(head.x, 206.0, 1e-3);
+    CHECK_NEAR(head.y, 156.0, 1e-3);
+}
+
 TEST_CASE(circle_end_time_equals_start) {
     Beatmap bm = base_map();
     HitObject circle;

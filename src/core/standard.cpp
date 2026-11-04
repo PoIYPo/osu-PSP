@@ -101,11 +101,50 @@ Judgement judge_hit(const StandardDifficulty& diff, double delta_ms) {
     return Judgement::Miss;
 }
 
+namespace {
+
+// osu!'s stacking: notes that land on almost the same spot within the stack
+// window are drawn as a diagonal cascade instead of an unreadable pile.
+void apply_stacking(Beatmap& map, const StandardDifficulty& diff) {
+    const double window = diff.preempt_ms() * map.stack_leniency;
+    constexpr float kSameSpot = 3.0f;   // osu pixels
+    constexpr float kOffset = 6.0f;     // osu pixels per stack level
+
+    const size_t count = map.objects.size();
+    for (size_t i = 0; i < count; ++i) {
+        HitObject& base = map.objects[i];
+        if (base.kind == ObjectKind::Spinner || base.stack_height != 0) continue;
+
+        int height = 0;
+        for (size_t j = i + 1; j < count; ++j) {
+            HitObject& other = map.objects[j];
+            if (other.time - base.time > window) break;
+            if (other.kind == ObjectKind::Spinner) continue;
+            if (distance(base.pos, other.pos) > kSameSpot) continue;
+            other.stack_height = ++height;
+        }
+    }
+
+    for (HitObject& obj : map.objects) {
+        if (obj.stack_height == 0) continue;
+        const float shift = kOffset * static_cast<float>(obj.stack_height);
+        obj.pos.x += shift;
+        obj.pos.y += shift;
+        for (Vec2& point : obj.slider.control_points) {
+            point.x += shift;
+            point.y += shift;
+        }
+    }
+}
+
+}  // namespace
+
 PlayableBeatmap compile_beatmap(Beatmap map) {
     PlayableBeatmap out;
     out.difficulty = StandardDifficulty::from(map);
     out.timing.build(map.timing_points);
     out.map = std::move(map);
+    apply_stacking(out.map, out.difficulty);
 
     const size_t count = out.map.objects.size();
     out.sliders.resize(count);

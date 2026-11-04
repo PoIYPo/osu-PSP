@@ -76,6 +76,9 @@ struct HitObject {
     int raw_type = 0;          // original bitmask, useful for debugging
     int sound = 0;             // hit sound bitmask (normal/whistle/finish/clap)
     bool new_combo = false;
+    // Set by stacking: overlapping objects are drawn with a small diagonal offset
+    // so a pile of notes stays readable (osu! does the same on desktop).
+    int stack_height = 0;
     int combo_offset = 0;      // "combo colour skip" encoded in the type bits
     SliderData slider;         // only meaningful when kind == Slider
 
