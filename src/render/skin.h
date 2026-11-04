@@ -52,4 +52,10 @@ Skin make_default_skin(int size = 128);
 // Index of a character in the font atlas, or -1.
 int font_glyph_index(char c);
 
+// 5 rows of a 3x5 glyph (bits 2..0 = left..right), or nullptr if unsupported.
+const uint8_t* glyph_rows(char c);
+
+// Horizontal advance of one glyph in glyph pixels (3 wide + 1 gap).
+constexpr float kGlyphAdvance = 4.0f;
+
 }  // namespace osu

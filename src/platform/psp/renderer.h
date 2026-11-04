@@ -34,11 +34,13 @@ public:
     void draw_sprite(const GuTexture& texture, float x, float y, float w, float h,
                      unsigned int tint_abgr);
     void draw_rect(float x, float y, float w, float h, unsigned int abgr);
-    void draw_text(const GuTexture& font, float x, float y, float scale, const char* text,
-                   unsigned int tint_abgr);
+    // Solid 3x5 bitmap text batched into a single triangle list. Textured glyph
+    // atlases did not survive the GU texture-cache switching on hardware, and
+    // rectangles are both cheaper and crisper at this size.
+    void draw_text(float x, float y, float scale, const char* text, unsigned int abgr_color);
     // Draws the text so that it ends at `right_x`.
-    void draw_text_right(const GuTexture& font, float right_x, float y, float scale,
-                         const char* text, unsigned int tint_abgr);
+    void draw_text_right(float right_x, float y, float scale, const char* text,
+                         unsigned int abgr_color);
 
 private:
     void bind_texture(const GuTexture& texture, bool linear_filter);

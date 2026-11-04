@@ -135,39 +135,52 @@ void Renderer::draw_sprite(const GuTexture& texture, float x, float y, float w, 
                    2, nullptr, v);
 }
 
-void Renderer::draw_text(const GuTexture& font, float x, float y, float scale, const char* text,
-                         unsigned int tint_abgr) {
-    if (!font.valid()) return;
-    bind_texture(font, false);
+void Renderer::draw_text(float x, float y, float scale, const char* text, unsigned int abgr_color) {
+    sceGuDisable(GU_TEXTURE_2D);
+    current_ = GuTexture{};
 
-    const float cell_w = 8.0f;
-    const float cell_h = 12.0f;
-    float cursor_x = x;
-
+    int quads = 0;
     for (const char* p = text; *p; ++p) {
-        const int index = font_glyph_index(*p);
-        if (index < 0) {
-            cursor_x += cell_w * scale;
-            continue;
-        }
-        const float u0 = static_cast<float>(index) * cell_w;
-        const float u1 = u0 + cell_w;
-
-        Vertex* v = static_cast<Vertex*>(sceGuGetMemory(sizeof(Vertex) * 2));
-        v[0] = {u0, 0.0f, tint_abgr, cursor_x, y, 0.0f};
-        v[1] = {u1, cell_h, tint_abgr, cursor_x + cell_w * scale, y + cell_h * scale, 0.0f};
-        sceGuDrawArray(GU_SPRITES,
-                       GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2,
-                       nullptr, v);
-
-        cursor_x += cell_w * scale;
+        if (glyph_rows(*p)) quads += 15;  // 3x5 lit pixels
     }
+    if (quads == 0) return;
+
+    Vertex* const base = static_cast<Vertex*>(sceGuGetMemory(sizeof(Vertex) * 6 * quads));
+    Vertex* w = base;
+
+    float cursor_x = x;
+    for (const char* p = text; *p; ++p) {
+        const uint8_t* rows = glyph_rows(*p);
+        if (rows) {
+            for (int row = 0; row < 5; ++row) {
+                for (int col = 0; col < 3; ++col) {
+                    if ((rows[row] & (1u << (2 - col))) == 0) continue;
+                    const float px = cursor_x + static_cast<float>(col) * scale;
+                    const float py = y + static_cast<float>(row) * scale;
+                    const float px1 = px + scale;
+                    const float py1 = py + scale;
+                    w[0] = {0.0f, 0.0f, abgr_color, px, py, 0.0f};
+                    w[1] = {0.0f, 0.0f, abgr_color, px1, py, 0.0f};
+                    w[2] = {0.0f, 0.0f, abgr_color, px, py1, 0.0f};
+                    w[3] = {0.0f, 0.0f, abgr_color, px1, py, 0.0f};
+                    w[4] = {0.0f, 0.0f, abgr_color, px1, py1, 0.0f};
+                    w[5] = {0.0f, 0.0f, abgr_color, px, py1, 0.0f};
+                    w += 6;
+                }
+            }
+        }
+        cursor_x += kGlyphAdvance * scale;
+    }
+
+    sceGuDrawArray(GU_TRIANGLES,
+                   GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D,
+                   static_cast<int>(w - base), nullptr, base);
 }
 
-void Renderer::draw_text_right(const GuTexture& font, float right_x, float y, float scale,
-                               const char* text, unsigned int tint_abgr) {
-    const float width = static_cast<float>(std::strlen(text)) * 8.0f * scale;
-    draw_text(font, right_x - width, y, scale, text, tint_abgr);
+void Renderer::draw_text_right(float right_x, float y, float scale, const char* text,
+                               unsigned int abgr_color) {
+    const float width = static_cast<float>(std::strlen(text)) * kGlyphAdvance * scale;
+    draw_text(right_x - width, y, scale, text, abgr_color);
 }
 
 }  // namespace osu

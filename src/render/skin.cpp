@@ -116,6 +116,12 @@ void draw_rect(Image& img, int x0, int y0, int w, int h, Rgba color) {
 
 }  // namespace
 
+const uint8_t* glyph_rows(char c) {
+    const int index = font_glyph_index(c);
+    if (index < 0) return nullptr;
+    return kGlyphRows[index];
+}
+
 int font_glyph_index(char c) {
     const char* p = kFontGlyphs;
     for (int i = 0; *p; ++p, ++i) {

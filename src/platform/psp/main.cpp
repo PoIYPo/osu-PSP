@@ -60,7 +60,6 @@ struct Textures {
     GuTexture ball;
     GuTexture follow;
     GuTexture cursor;
-    GuTexture font;
     float round_radius = 62.0f;  // radius of the disc inside the texture
     float skin_size = 128.0f;
 };
@@ -73,7 +72,6 @@ Textures upload_skin(Renderer& renderer, const Skin& skin) {
     textures.ball = renderer.upload(skin.slider_ball);
     textures.follow = renderer.upload(skin.follow_circle);
     textures.cursor = renderer.upload(skin.cursor);
-    textures.font = renderer.upload(skin.font);
     textures.skin_size = static_cast<float>(skin.size);
     textures.round_radius = static_cast<float>(skin.size) * 0.5f - 2.0f;
     return textures;
@@ -195,13 +193,13 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game) {
     char text[32];
     std::snprintf(text, sizeof(text), "%d.%d%%", static_cast<int>(game.accuracy() * 100.0),
                   static_cast<int>(game.accuracy() * 1000.0) % 10);
-    r.draw_text(t.font, 6.0f, 26.0f, 0.9f, text, abgr(200, 210, 230));
+    r.draw_text(6.0f, 26.0f, 0.9f, text, abgr(200, 210, 230));
 
     std::snprintf(text, sizeof(text), "x%d", stats.combo);
-    r.draw_text_right(t.font, kScreenWidth - 6.0f, 22.0f, 1.4f, text, abgr(255, 255, 255));
+    r.draw_text_right(kScreenWidth - 6.0f, 22.0f, 1.4f, text, abgr(255, 255, 255));
 
     std::snprintf(text, sizeof(text), "%d", stats.score);
-    r.draw_text(t.font, 6.0f, kScreenHeight - 32.0f, 0.9f, text, abgr(160, 170, 190));
+    r.draw_text(6.0f, kScreenHeight - 32.0f, 0.9f, text, abgr(160, 170, 190));
 
     const float bar_x = kScreenWidth - 24.0f;
     const float bar_h = 180.0f;
@@ -291,7 +289,10 @@ int main() {
     sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
 
     SceCtrlData pad{};
-    double start_time = now_ms() + 1500.0;  // lead-in before the first object
+    // Start the timeline so the first object reaches the playfield after 1.5 s.
+    const double lead_in = 1500.0;
+    const double first_object = play ? play->map.first_object_time() : 0.0;
+    double start_time = now_ms() + lead_in - first_object;
 
     for (;;) {
         sceCtrlReadBufferPositive(&pad, 1);
@@ -303,7 +304,7 @@ int main() {
         if (game) {
             if (pad.Buttons & PSP_CTRL_SELECT) {
                 game->reset();
-                start_time = now_ms() + 1500.0;
+                start_time = now_ms() + lead_in - first_object;
             }
             game->update(song_time, input);
         }
