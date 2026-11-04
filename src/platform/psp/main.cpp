@@ -184,7 +184,7 @@ void render_gameplay(Renderer& r, const Textures& t, const Gameplay& game) {
         visible_sliders.push_back(i);
     }
 
-    const float stamp_step = std::max(3.0f, radius * 0.45f);
+    const float stamp_step = std::max(2.0f, radius * 0.22f);
     for (size_t index : visible_sliders) {
         stamp_path(r, t.dot, t, game.map().sliders[index].path.points(), radius + 2.0f,
                    abgr(245, 245, 250, 240), stamp_step);

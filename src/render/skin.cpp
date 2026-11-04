@@ -128,9 +128,20 @@ Skin make_default_skin(int size) {
     draw_rect(skin.cursor, static_cast<int>(half) - 1, static_cast<int>(half - radius * 0.42f) - 2,
               2, 6, {1.0f, 1.0f, 1.0f, 0.9f});
 
-    // Slider body stamp: a plain disc, stamped densely along the path.
+    // Slider body stamp: a plain disc stamped densely along the path. It uses a
+    // hard edge on purpose: the antialiased rims of overlapping stamps would show
+    // up as seams inside the track.
     skin.slider_dot.resize(size, size);
-    draw_disc(skin.slider_dot, half, half, radius, {1.0f, 1.0f, 1.0f, 1.0f});
+    for (int y = 0; y < size; ++y) {
+        for (int x = 0; x < size; ++x) {
+            const float dx = static_cast<float>(x) + 0.5f - half;
+            const float dy = static_cast<float>(y) + 0.5f - half;
+            if (dx * dx + dy * dy <= radius * radius) {
+                skin.slider_dot.pixels[static_cast<size_t>(y) * size + static_cast<size_t>(x)] =
+                    0xFFFFFFFFu;
+            }
+        }
+    }
 
     return skin;
 }
